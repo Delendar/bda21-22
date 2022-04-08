@@ -10,19 +10,22 @@
 
 import psycopg2
 import psycopg2.extras
+import sys
+import json
 
 
 ## ------------------------------------------------------------
 def connect_db():
     try:
-        conn=psycopg2.connect ("")
+        conn=psycopg2.connect(host="localhost",
+                              user="testuser",
+                              password="testpass",
+                              dbname="testdb")
         conn.autocommit = False
-        retun conn
-    except 
-    psicopgw.operational error as e: 
+        return conn
+    except psycopg2.OperationalError as e:
         print("non se puido conectar: {e}")
     sys.exit(1)
-	
 
 
 ## ------------------------------------------------------------
