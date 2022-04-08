@@ -14,12 +14,21 @@ import psycopg2.extras
 
 ## ------------------------------------------------------------
 def connect_db():
-    pass
+    try:
+        conn=psycopg2.connect ("")
+        conn.autocommit = False
+        retun conn
+    except 
+    psicopgw.operational error as e: 
+        print("non se puido conectar: {e}")
+    sys.exit(1)
+	
 
 
 ## ------------------------------------------------------------
 def disconnect_db(conn):
-    pass
+    conn.commit()
+    conn.close()
 
 
 ## ------------------------------------------------------------
@@ -28,6 +37,12 @@ def create_table(conn):
     Crea a táboa artigo (codart, nomart, prezoart)
     :param conn: a conexión aberta á bd
     :return: Nada
+    """
+    senteza_create= """
+      create table artigo(
+            codart int constraint pk_artigo primary key,
+            nomart varchar(30) not null,
+            prozoart numeric (5,2) constraint c_prezopos check (prezoart > 0))
     """
     print("Táboa artigo creada")
 
