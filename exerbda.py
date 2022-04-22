@@ -10,6 +10,7 @@
 
 import psycopg2
 import psycopg2.extras
+import psycopg2.errorcodes
 import sys
 import json
 
@@ -33,6 +34,14 @@ def disconnect_db(conn):
     conn.commit()
     conn.close()
 
+## ------------------------------------------------------------
+def select_table(conn):
+    with conn.cursor() as cur:
+        cur.execute("select * from artigo")
+        row = cur.fetchone()
+        while row:
+            print(f"Fila número {cur.rownumber} de {cur.rowcount}: {row}")
+            row = cur.fetchone()
 
 ## ------------------------------------------------------------
 def create_table(conn):
@@ -41,15 +50,93 @@ def create_table(conn):
     :param conn: a conexión aberta á bd
     :return: Nada
     """
-    senteza_create= """
+    sentenza_create= """
       create table artigo(
             codart int constraint pk_artigo primary key,
             nomart varchar(30) not null,
-            prozoart numeric (5,2) constraint c_prezopos check (prezoart > 0))
+            prezoart numeric (5,2) constraint c_prezopos check (prezoart > 0))
     """
-    print("Táboa artigo creada")
+    with conn.cursor() as cur:
+        try:
+            cur.execute(sentenza_create)
+            conn.commit()
+            print("Táboa artigo creada")
+        except psycopg2.Error as e:
+            if e.pgcode == psycopg2.errorcodes.DUPLICATE_TABLE:
+                print("A táboa xa existe")
+            else:
+                print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
+            conn.rollback()
 
-
+## ------------------------------------------------------------
+def drop_table(conn):
+    """
+    Elimina a táboa artigo (codart, nomart, prezoart)
+    :param conn: a conexión aberta á bd
+    :return: Nada
+    """
+    
+    sentenza_drop ="""
+        drop table artigo
+    """
+    with conn.cursor() as cur:
+        try:
+            cur.execute(sentenza_drop)
+            conn.commit()
+            print("Táboa artigo borrada")
+        except psycopg2.Error as e:
+            if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
+                print("A táboa non existe")  
+            else:
+                print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
+            conn.rollback()
+## ------------------------------------------------------------
+def insert_row(conn):  
+    scod = input("Codigo: ")
+    cod = None if scod== "" else int(scod)
+    
+    snome = input("Nome: ")
+    nome= None if snome == "" else snome
+    
+    sprezo = input("Prezo: ")
+    prezo = None if sprezo == "" else float(sprezo)
+    
+    sentenza_insert = "insert into artigo(codart,nomart,prezoart) values (%(cod)s,%(nom)s,%(prezo)s)"
+    valores = {'cod': cod, 'nom': nome, 'prezo': prezo}
+    
+    with conn.cursor() as cur:
+        try:
+            cur.execute(sentenza_insert, valores)
+            conn.commit()
+            print("Artigo engadidos")
+        except psycopg2.Error as e:
+            if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
+                print("A táboa non existe")  
+            elif e.pgcode == psycopg2.errorcodes.NOT_NULL_VIOLATION:
+                if "codart" in e.pgerror:
+                    print("O código é obrigatorio")
+                else:
+                    print("O nome é obrigatorio")
+            elif e.pgcode == psycopg2.errorcodes.CHECK_VIOLATION:
+                print("O prezo debe ser positivo")
+            elif e.pgcode == psycopg2.errorcodes.UNIQUE_VIOLATION:
+                print(f"O codigo de artigo {cod} xa existe")
+            else:
+                print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
+            conn.rollback()
+            
+## ------------------------------------------------------------
+def show_row(conn, control_tx=True):
+    scod = input("Codigo: ")
+    cod = None if scod== "" else int(scod)
+    
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        cur.execute(f"select * from artigo where codart={cod}")
+        row = cur.fetchone()
+        while row:
+            print(f"Fila número {cur.rownumber} de {cur.rowcount}: {row}")
+            row = cur.fetchone()    
+    
 ## ------------------------------------------------------------
 def menu(conn):
     """
@@ -58,7 +145,11 @@ def menu(conn):
     """
     MENU_TEXT = """
       -- MENÚ --
+s - Ver artigo
 1 - Crear táboa artigo   
+2 - Borrar táboa artigo
+3 - Insertar fila
+4 - Mostrar artigo
 q - Saír   
 """
     while True:
@@ -66,8 +157,16 @@ q - Saír
         tecla = input('Opción> ')
         if tecla == 'q':
             break
+        elif tecla == 's':
+            select_table(conn)
         elif tecla == '1':
-            create_table(conn)  
+            create_table(conn)
+        elif tecla == '2':
+            drop_table(conn)
+        elif tecla == '3':
+            insert_row(conn)
+        elif tecla == '4':
+            show_row(conn)
             
             
 ## ------------------------------------------------------------
