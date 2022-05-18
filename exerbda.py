@@ -130,12 +130,72 @@ def show_row(conn, control_tx=True):
     scod = input("Codigo: ")
     cod = None if scod== "" else int(scod)
     
+    """    
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
         cur.execute(f"select * from artigo where codart={cod}")
         row = cur.fetchone()
         while row:
             print(f"Fila número {cur.rownumber} de {cur.rowcount}: {row}")
-            row = cur.fetchone()    
+            row = cur.fetchone()"""
+            
+    sql= "select nomart, prezoart from artigo where codart = %s"
+            
+    retval = None
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        try:
+            cur.execute(sql, (cod,))
+            row= cur.fetchone()
+            if row:
+                retval = cod
+                prezo = row['prezoart'] if row['prezoart'] else "Descoñecido"
+                printf(f"Codigo: {prezo}; Nome: {row['nomart']}; Prezo: {prezo}")
+            else:
+                print(f"O artigo de código {cod} non existe.")
+            if control_tx: conn.comit()
+        except psycopg2.Error as e:
+            print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
+            if control_tx: conn.rollback()
+    return retval
+    
+    
+def update_price(conn):
+    
+    conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED
+    cod= show_row(conn, control_tx=False)
+    
+    if cod is None:
+        donn.rollback()
+        return
+    
+    incremento = float (input("Introduce incremento de prezo:"))
+    
+    sql= "update artigo set prezoart = prezoart + prezoart * %(incremento)s /100 where codart=%(cod)s"
+    
+    
+    with conn.cursor() as cur:
+        try:
+            cur.execute(sentenza_insert, valores)
+            input("Pulsa una tecla")
+            conn.commit()
+            print("Artigo engadidos")
+        except psycopg2.Error as e:
+            if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
+                print("A táboa non existe")  
+            elif e.pgcode == psycopg2.errorcodes.NOT_NULL_VIOLATION:
+                if "codart" in e.pgerror:
+                    print("O código é obrigatorio")
+                else:
+                    print("O nome é obrigatorio")
+            elif e.pgcode == psycopg2.errorcodes.CHECK_VIOLATION:
+                print("O prezo debe ser positivo")
+            elif e.pgcode == psycopg2.errorcodes.UNIQUE_VIOLATION:
+                print(f"O codigo de artigo {cod} xa existe")
+            else:
+                print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
+            conn.rollback()
+    
+    
+
     
 ## ------------------------------------------------------------
 def menu(conn):
@@ -167,6 +227,8 @@ q - Saír
             insert_row(conn)
         elif tecla == '4':
             show_row(conn)
+        elif tecla == '5':
+            update_price(conn)
             
             
 ## ------------------------------------------------------------
