@@ -114,7 +114,7 @@ Leyenda de prioridades:
 
 | Prioridad | Símbolo                                                    |
 |:---------:|:----------------------------------------------------------:|
-|   Alta    | <span style="font-family:monospace;color:red;">A</span>    |
+|   Alta    |  <span style="font-family:monospace;color:red;">A</span>   |
 |   Media   | <span style="font-family:monospace;color:yellow;">M</span> |
 |   Baja    | <span style="font-family:monospace;color:green;">B</span>  |
 | Opcional  | <span style="font-family:monospace;color:green;">O</span>  |
