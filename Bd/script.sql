@@ -1,39 +1,67 @@
-drop table recomendacion cascade constraints;
-drop table hist_rec cascade constraints;
-drop table vacuna cascade constraints;
-
+drop table estadistica_vacuna cascade;
+drop table recomendacion_vacuna cascade;
+drop table recomendacion cascade;
+drop table vacuna cascade;
+drop table estadistica cascade;
 
 create table recomendacion(
-	cod_rec numeric(4),
-	nombre_org varchar(20) not null,
+	cod_recomendacion numeric(4),
+	organizacion varchar(20) not null,
 	descripcion varchar(50) not null,
-	constraint pk_recomen primary key (cod_rec));
+	constraint pk_recomendacion primary key (cod_recomendacion));
 
 create table vacuna(
 	cod_vacuna numeric(4),
-	nombre_v varchar(20) not null,
-	dosis_nece numeric(1) not null,
+	nombre_vacuna varchar(20) not null unique,
 	constraint pk_vacuna primary key (cod_vacuna));
 
-create table hist_rec(
-	fecha_rec date,
+create table estadistica(
+    cod_estadistica numeric(4),
+    nombre_estadistica varchar(20) not null unique,
+    constraint pk_estadistica primary key (cod_estadistica));
+
+create table estadistica_vacuna(
+    cod_vacuna numeric(4),
+    cod_estadistica numeric(4),
+    valor numeric(12,2) not null,
+    descripcion varchar(50),
+    constraint pk_est_vac primary key (cod_vacuna, cod_estadistica),
+    constraint fk_est_vac_vacuna foreign key (cod_vacuna) references vacuna,
+    constraint fk_est_vac_estadistica foreign key (cod_estadistica) references estadistica);
+
+create table recomendacion_vacuna(
+	cod_vacuna numeric(4),
 	cod_rec numeric(4),
-	estado varchar(10) not null,
-	cod_vacuna numeric(4) not null,
-	constraint pk_histrec primary key (fecha_rec, cod_rec),
-	constraint fk_histrec_crec foreign key (cod_rec) references recomendacion,
-	constraint fk_histrec_cvacuna foreign key (cod_vacuna) references vacuna);
+	fecha_aplicacion date not null,
+	constraint pk_rec_vac primary key (cod_rec, cod_vacuna),
+	constraint fk_rec_vac_recomendacion foreign key (cod_rec) references recomendacion,
+	constraint fk_rec_vac_vacuna foreign key (cod_vacuna) references vacuna);
 
+insert into vacuna (cod_vacuna, nombre_vacuna) values(1001,'Pfzier');
+insert into vacuna (cod_vacuna, nombre_vacuna) values(1002,'AstraZeneca');
+insert into vacuna (cod_vacuna, nombre_vacuna) values(1003,'Janhsen');
 
-insert into vacuna values(1001,'Pfzier',2);
-insert into vacuna values(1002,'AstraZeneca',2);
-insert into vacuna values(1003,'Janhsen',1);
+insert into recomendacion (cod_recomendacion, organizacion, descripcion) values(0100,'OMS','No a mayores de 65');
+insert into recomendacion (cod_recomendacion, organizacion, descripcion) values(0200,'OMS','No a mayores de 50');
+insert into recomendacion (cod_recomendacion, organizacion, descripcion) values(0300,'Sanidad','No a mayores de 55');
 
-insert into recomendacion values(0100,'OMS','No a mayores de 65');
-insert into recomendacion values(0200,'OMS','No a mayores de 50');
-insert into recomendacion values(0300,'Sanidad','No a mayores de 55');
+insert into estadistica (cod_estadistica, nombre_estadistica) values(1, 'dosis_necesarias');
+insert into estadistica (cod_estadistica, nombre_estadistica) values(2, 'precio_dosis');
 
-insert into hist_rec values(to_date('10/03/2021','DD/MM/YY'),0100,'No vigente',1002);
-insert into hist_rec values(to_date('20/03/2021','DD/MM/YY'),0200,'Vigente',1002);
-insert into hist_rec values(to_date('25/03/2021','DD/MM/YY'),0300,'Borrador',1002);
-insert into hist_rec values(to_date('15/02/2021','DD/MM/YY'),0100,'Vigente',1001);
+insert into recomendacion_vacuna (cod_vacuna, cod_rec, fecha_aplicacion)
+    values(1002, 0100, to_date('10/03/2021','DD/MM/YY'));
+insert into recomendacion_vacuna (cod_vacuna, cod_rec, fecha_aplicacion)
+    values(1002, 0200, to_date('20/03/2021','DD/MM/YY'));
+insert into recomendacion_vacuna (cod_vacuna, cod_rec, fecha_aplicacion)
+    values(1002, 0300, to_date('25/03/2021','DD/MM/YY'));
+insert into recomendacion_vacuna (cod_vacuna, cod_rec, fecha_aplicacion)
+    values(1001, 0100, to_date('15/02/2021','DD/MM/YY'));
+
+insert into estadistica_vacuna (cod_vacuna, cod_estadistica, valor, descripcion)
+    values (1001, 1, 2, null);
+insert into estadistica_vacuna (cod_vacuna, cod_estadistica, valor, descripcion)
+    values (1001, 2, 10, null);
+insert into estadistica_vacuna (cod_vacuna, cod_estadistica, valor, descripcion)
+    values (1002, 1, 3, null);
+insert into estadistica_vacuna (cod_vacuna, cod_estadistica, valor, descripcion)
+    values (1002, 2, 9, null);

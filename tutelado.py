@@ -18,6 +18,7 @@ DBHOST = "localhost"
 DBUSER = "testuser"
 DBUSERPASS = "testpass"
 DBNAME = "testdb"
+
 ## ------------------------------------------------------------
 def connect_db():
     try:
