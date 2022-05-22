@@ -223,12 +223,12 @@ Errores a considerar:
     - [ ] Parte entera demasiado grande.
     - [ ] Parte decimal demasiado grande.
 - Estadística-vacuna:
-  - [ ] Inexistencia de:
+  - [X] Inexistencia de:
     - <span style="font-family:monospace;">nombre_vacuna</span>
     - <span style="font-family:monospace;">nombre_estadistica</span>
-  - [ ] Valores nulos en:
+  - [X] Valores nulos en:
     - <span style="font-family:monospace;">valor</span>
-  - [ ] Inexistencia de valores objetivo de claves referenciales en:
+  - [X] Inexistencia de valores objetivo de claves referenciales en:
     - <span style="font-family:monospace;">cod_vacuna</span>
     - <span style="font-family:monospace;">cod_estadistica</span>
 - Recomendación-vacuna:

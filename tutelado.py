@@ -107,7 +107,30 @@ def drop_table(conn):
             conn.rollback()
 
 
-## ------------------------------------------------------------
+# ------------------------------------------------------------
+
+
+def get_cod_vacuna(cur, nombre_vacuna):
+    select_vac_cod = "select cod_vacuna from vacuna where nombre_vacuna=(%(v_nom)s)"
+    valor_select_vac_cod = {'v_nom': nombre_vacuna}
+    cur.execute(select_vac_cod, valor_select_vac_cod)
+    record = cur.fetchall()
+    if len(record) == 0:
+        return None
+    else:
+        return record[0]['cod_vacuna']
+
+
+def get_cod_estadistica(cur, nombre_estadistica):
+    select_est_cod = "select cod_estadistica from estadistica where nombre_estadistica=(%(e_nom)s)"
+    valor_select_est_cod = {'e_nom': nombre_estadistica}
+    cur.execute(select_est_cod, valor_select_est_cod)
+    record = cur.fetchall()
+    if len(record) == 0:
+        return None
+    else:
+        return record[0]['cod_estadistica']
+
 
 def insert_generico(nombre_data):
     scod = input(f"Codigo de {nombre_data}: ")
@@ -404,86 +427,89 @@ def listar_estadisticas(conn):
         except psycopg2.Error as e:
             print(f"Error genérico: {e.pgcode} : {e.pgerror}")
 
-"""
-Falta gestión de errores:
-    PK duplicadas
-    FK inexistentes
-    ...
-"""
-def registrar_estadistica(conn):
-    v_cod_search = False
+# Registrar Estadísticas
+def registrar_estadistica_form():
     sv_cod = input("Codigo o nombre de vacuna: ")
     if sv_cod == "":
-        v_cod = None
+        v_criteria = None
     elif sv_cod.isdigit():
-        v_cod = int(sv_cod)
-        v_cod_search = True
+        v_criteria = int(sv_cod)
     else:
-        v_nom = sv_cod.upper()
+        v_criteria = sv_cod.upper()
 
-    e_cod_search = False
     se_cod = input("Codigo o nombre de estadística: ")
     if se_cod == "":
-        e_cod = None
+        e_criteria = None
     elif se_cod.isdigit():
-        e_cod = int(se_cod)
-        e_cod_search = True
+        e_criteria = int(se_cod)
     else:
-        e_nom = se_cod.upper()
+        e_criteria = se_cod.upper()
 
     se_valor = input("Valor de la estadística (valor numérico): ")
     e_valor = None if se_valor == "" else float(se_valor)
 
     se_desc = input("Descripción de la estadística ( [ENTER] para dejarlo en blanco): ")
     e_desc = None if se_desc == "" else se_desc
+    return {'v_criteria': v_criteria,
+            'e_criteria': e_criteria,
+            'e_valor': e_valor, 'e_desc': e_desc}
+
+def registrar_estadistica_control_errores(e, v_cod, e_cod):
+    if e.pgcode == psycopg2.errorcodes.UNIQUE_VIOLATION:
+        print(f"\nFALLO: Violación de clave primaria."
+              f"\nYa existe un registro para la estadística ({e_cod}) sobre la vacuna ({v_cod})")
+    elif e.pgcode == psycopg2.errorcodes.NOT_NULL_VIOLATION:
+        print(f"\nFALLO: Los siguientes valores son obligatorios:"
+              f"\n\t Código de vacuna"
+              f"\n\t Código de estadística"
+              f"\n\t Valor de estadística")
+    elif e.pgcode == psycopg2.errorcodes.FOREIGN_KEY_VIOLATION:
+        if 'cod_vacuna' in e.diag.message_detail:
+            print(f"\nFALLO: Violación de clave foránea."
+                  f"\nLa vacuna con clave cod_vacuna ({v_cod}) no está presente en la tabla VACUNA.")
+        if 'cod_estadistica' in e.diag.message_detail:
+            print(f"\nFALLO: Violación de clave foránea."
+                  f"\nLa estadistica con clave cod_estadistica ({e_cod}) no está presente en la tabla ESTADISTICA.")
+    else:
+        print(f"\nError genérico: {e.pgcode} : {e.pgerror}")
+
+def registrar_estadistica(conn):
+    inputs = registrar_estadistica_form()
+    v_criteria = inputs['v_criteria']
+    e_criteria = inputs['e_criteria']
+    e_valor = inputs['e_valor']
+    e_desc = inputs['e_desc']
 
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
         try:
-            if (not v_cod_search):
-                select_vac_cod = "select cod_vacuna from vacuna where nombre_vacuna=(%(v_nom)s)"
-                valor_select_vac_cod = {'v_nom': v_nom}
-                cur.execute(select_vac_cod, valor_select_vac_cod)
-                record = cur.fetchall()
-                if len(record) == 0:
-                    print(f"No se encontró ninguna vacuna con el nombre \"{v_nom}\"")
+            # Check si el dato es el nombre o es el codigo
+            if isinstance(v_criteria, str):
+                v_cod = get_cod_vacuna(cur, v_criteria)
+                if v_cod is None:
+                    print(f"No se encontró ninguna vacuna con el nombre \"{v_criteria}\"")
                     conn.rollback()
                     return
                 else:
-                    v_cod = record[0]['cod_vacuna']
-            if (not e_cod_search):
-                select_est_cod = "select cod_estadistica from estadistica where nombre_estadistica=(%(e_nom)s)"
-                valor_select_est_cod = {'e_nom': e_nom}
-                cur.execute(select_est_cod, valor_select_est_cod)
-                record = cur.fetchall()
-                if len(record) == 0:
-                    print(f"No se encontró ninguna estadistica con el nombre \"{e_nom}\"")
+                    v_criteria = v_cod
+            # Check si el dato es el nombre o es el codigo
+            if isinstance(e_criteria, str):
+                e_cod = get_cod_estadistica(cur, e_criteria)
+                if e_cod is None:
+                    print(f"No se encontró ninguna estadística con el nombre \"{e_criteria}\"")
                     conn.rollback()
                     return
                 else:
-                    e_cod = record[0]['cod_estadistica']
+                    e_criteria = e_cod
+
             sentencia_insert = "insert into estadistica_vacuna(cod_vacuna, cod_estadistica, valor, descripcion)" \
                                " values(%(v_cod)s,%(e_cod)s,%(valor)s,%(desc)s)"
-            valores_insert = {'v_cod': v_cod, 'e_cod': e_cod, 'valor': e_valor, 'desc': e_desc}
+            valores_insert = {'v_cod': v_criteria, 'e_cod': e_criteria, 'valor': e_valor, 'desc': e_desc}
             cur.execute(sentencia_insert, valores_insert)
             conn.commit()
             print(f"Estadística registrada.")
         except psycopg2.Error as e:
-            if e.pgcode == psycopg2.errorcodes.UNIQUE_VIOLATION:
-                print(f"FALLO: Ya existe un registro para la estadística ({e_cod}) sobre la vacuna ({v_cod})")
-            elif e.pgcode == psycopg2.errorcodes.FOREIGN_KEY_VIOLATION:
-                print(f"FALLO: Una de las claves foráneas no coincide con ninguna clave primaria de la tabla referenciada."
-                      f"\n\t Código de estadística = cod_estadistica = {e_cod}"
-                      f"\n\t Código de vacuna = cod_vacuna = {v_cod}"
-                      f"\n{e.diag.message_detail}")
-            else:
-                print(f"Error genérico: {e.pgcode} : {e.pgerror}")
+            registrar_estadistica_control_errores(e, v_criteria, e_criteria)
             conn.rollback()
-
-
-
-
-
-
 
 
 def listar_recomendaciones(conn):
