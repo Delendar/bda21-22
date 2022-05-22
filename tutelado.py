@@ -390,7 +390,177 @@ def update_price(conn):
                 print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
             conn.rollback()
 
+def listar_estadisticas(conn):
+    sql = "select * from estadistica"
 
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        try:
+            cur.execute(sql)
+            record = cur.fetchall()
+            for row in record:
+                c_est = row['cod_estadistica']
+                n_est = row['nombre_estadistica']
+                print(f"({c_est}) Nombre {n_est}")
+        except psycopg2.Error as e:
+            print(f"Error genérico: {e.pgcode} : {e.pgerror}")
+
+"""
+Falta gestión de errores:
+    PK duplicadas
+    FK inexistentes
+    ...
+"""
+def registrar_estadistica(conn):
+    v_cod_search = False
+    sv_cod = input("Codigo o nombre de vacuna: ")
+    if sv_cod == "":
+        v_cod = None
+    elif sv_cod.isdigit():
+        v_cod = int(sv_cod)
+        v_cod_search = True
+    else:
+        v_nom = sv_cod.upper()
+
+    e_cod_search = False
+    se_cod = input("Codigo o nombre de estadística: ")
+    if se_cod == "":
+        e_cod = None
+    elif se_cod.isdigit():
+        e_cod = int(se_cod)
+        e_cod_search = True
+    else:
+        e_nom = se_cod.upper()
+
+    se_valor = input("Valor de la estadística (valor numérico): ")
+    e_valor = None if se_valor == "" else float(se_valor)
+
+    se_desc = input("Descripción de la estadística ( [ENTER] para dejarlo en blanco): ")
+    e_desc = None if se_desc == "" else se_desc
+
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        try:
+            if (not v_cod_search):
+                select_vac_cod = "select cod_vacuna from vacuna where nombre_vacuna=(%(v_nom)s)"
+                valor_select_vac_cod = {'v_nom': v_nom}
+                cur.execute(select_vac_cod, valor_select_vac_cod)
+                record = cur.fetchall()
+                if len(record) == 0:
+                    print(f"No se encontró ninguna vacuna con el nombre \"{v_nom}\"")
+                    conn.rollback()
+                    return
+                else:
+                    v_cod = record[0]['cod_vacuna']
+            if (not e_cod_search):
+                select_est_cod = "select cod_estadistica from estadistica where nombre_estadistica=(%(e_nom)s)"
+                valor_select_est_cod = {'e_nom': e_nom}
+                cur.execute(select_est_cod, valor_select_est_cod)
+                record = cur.fetchall()
+                if len(record) == 0:
+                    print(f"No se encontró ninguna estadistica con el nombre \"{e_nom}\"")
+                    conn.rollback()
+                    return
+                else:
+                    e_cod = record[0]['cod_estadistica']
+            sentencia_insert = "insert into estadistica_vacuna(cod_vacuna, cod_estadistica, valor, descripcion)" \
+                               " values(%(v_cod)s,%(e_cod)s,%(valor)s,%(desc)s)"
+            valores_insert = {'v_cod': v_cod, 'e_cod': e_cod, 'valor': e_valor, 'desc': e_desc}
+            cur.execute(sentencia_insert, valores_insert)
+            conn.commit()
+            print(f"Estadística registrada.")
+        except psycopg2.Error as e:
+            if e.pgcode == psycopg2.errorcodes.UNIQUE_VIOLATION:
+                print(f"FALLO: Ya existe un registro para la estadística ({e_cod}) sobre la vacuna ({v_cod})")
+            elif e.pgcode == psycopg2.errorcodes.FOREIGN_KEY_VIOLATION:
+                print(f"FALLO: Una de las claves foráneas no coincide con ninguna clave primaria de la tabla referenciada."
+                      f"\n\t Código de estadística = cod_estadistica = {e_cod}"
+                      f"\n\t Código de vacuna = cod_vacuna = {v_cod}"
+                      f"\n{e.diag.message_detail}")
+            else:
+                print(f"Error genérico: {e.pgcode} : {e.pgerror}")
+            conn.rollback()
+
+
+
+
+
+
+
+
+def listar_recomendaciones(conn):
+    sql = "select * from recomendacion"
+
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        try:
+            cur.execute(sql)
+            record = cur.fetchall()
+            for row in record:
+                c_rec = row['cod_recomendacion']
+                org = row['organizacion']
+                desc = row['descripcion']
+                print(f"({c_rec}) Organización {org}"
+                      f"\n\t Descripción: {desc}")
+        except psycopg2.Error as e:
+            print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
+
+def buscar_recomendaciones(conn):
+    cod_search = False
+    scod = input("Criterio de búsqueda (código para búsqueda específica, nombre para organización): \n>")
+    if scod == "":
+        cod = None
+    elif scod.isdigit():
+        cod_search = True
+        cod = int(scod)
+    else:
+        org = scod.upper()
+
+    if cod_search:
+        sql = "select * from recomendacion where cod_recomendacion = (%(cod)s)"
+        valor = {'cod': cod}
+    else:
+        sql = "select * from recomendacion where organizacion = (%(org)s)"
+        valor = {'org': org}
+
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        try:
+            cur.execute(sql, valor)
+            if cod_search:
+                record = cur.fetchall()
+                if len(record) == 0:
+                    print(f"La recomendación con código {cod} no existe.")
+                else:
+                    row = record[0]
+                    c_rec = cod
+                    org = row['organizacion']
+                    desc = row['descripcion']
+                    print(f"({c_rec}) Organización {org}"
+                          f"\n\t Descripción: {desc}");
+            else:
+                record = cur.fetchall()
+                for row in record:
+                    c_rec = row['cod_recomendacion']
+                    org = row['organizacion']
+                    desc = row['descripcion']
+                    print(f"({c_rec}) Organización {org}"
+                          f"\n\t Descripción: {desc}")
+        except psycopg2.Error as e:
+            print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
+
+def ver_recomendaciones(conn):
+    MENU_TEXT = """
+          -- MENÚ > Ver recomendaciones--
+    1 - Listar todas
+    2 - Búsqueda
+    q - Atrás   
+    """
+    while True:
+        print(MENU_TEXT)
+        tecla = input('Opción> ')
+        if tecla == 'q':
+            break
+        elif tecla == '1':
+            listar_recomendaciones(conn)
+        elif tecla == '2':
+            buscar_recomendaciones(conn)
 ## ------------------------------------------------------------
 def menu(conn):
     """
@@ -399,12 +569,10 @@ def menu(conn):
     """
     MENU_TEXT = """
       -- MENÚ --
-s - Ver artigo
-1 - Añadir vacuna
-2 - Añadir recomendación
-3 - Añadir estadística
-4 - Estadísticas de vacuna
-5 - Recomendaciones de vacuna
+1 - Añadir vacuna           2 - Añadir recomendación       3 - Añadir estadística
+4 - Estadísticas de vacuna  5 - Recomendaciones de vacuna
+6 - Ver recomendaciones     7 - Listar estadísticas
+8 - Registrar estadística de vacuna
 q - Saír   
 """
     while True:
@@ -422,6 +590,12 @@ q - Saír
             show_estadisticas_vacuna(conn, False)
         elif tecla == '5':
             show_recomendaciones_vacuna(conn, False)
+        elif tecla == '6':
+            ver_recomendaciones(conn)
+        elif tecla == '7':
+            listar_estadisticas(conn)
+        elif tecla == '8':
+            registrar_estadistica(conn)
 
 
 ## ------------------------------------------------------------

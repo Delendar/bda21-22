@@ -37,16 +37,16 @@ create table recomendacion_vacuna(
 	constraint fk_rec_vac_recomendacion foreign key (cod_recomendacion) references recomendacion,
 	constraint fk_rec_vac_vacuna foreign key (cod_vacuna) references vacuna);
 
-insert into vacuna (cod_vacuna, nombre_vacuna) values(1001,'Pfzier');
-insert into vacuna (cod_vacuna, nombre_vacuna) values(1002,'AstraZeneca');
-insert into vacuna (cod_vacuna, nombre_vacuna) values(1003,'Janhsen');
+insert into vacuna (cod_vacuna, nombre_vacuna) values(1001,'PFZIER');
+insert into vacuna (cod_vacuna, nombre_vacuna) values(1002,'ASTRAZENECA');
+insert into vacuna (cod_vacuna, nombre_vacuna) values(1003,'JANHSEN');
 
 insert into recomendacion (cod_recomendacion, organizacion, descripcion) values(0100,'OMS','No a mayores de 65');
 insert into recomendacion (cod_recomendacion, organizacion, descripcion) values(0200,'OMS','No a mayores de 50');
-insert into recomendacion (cod_recomendacion, organizacion, descripcion) values(0300,'Sanidad','No a mayores de 55');
+insert into recomendacion (cod_recomendacion, organizacion, descripcion) values(0300,'SANIDAD','No a mayores de 55');
 
-insert into estadistica (cod_estadistica, nombre_estadistica) values(1, 'dosis_necesarias');
-insert into estadistica (cod_estadistica, nombre_estadistica) values(2, 'precio_dosis');
+insert into estadistica (cod_estadistica, nombre_estadistica) values(1, 'DOSIS_NECESARIAS');
+insert into estadistica (cod_estadistica, nombre_estadistica) values(2, 'PRECIO_DOSIS');
 
 insert into recomendacion_vacuna (cod_vacuna, cod_recomendacion, fecha_aplicacion)
     values(1002, 0100, to_date('10/03/2021','DD/MM/YY'));

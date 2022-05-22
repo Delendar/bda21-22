@@ -158,24 +158,26 @@ funcionalidades.
 
 <a name="func-obtencion-datos"></a>
 ### Funcionalidades de obtención de datos: 
-- [ ] Recuperación de información de una vacuna (fila única).
+- [X] Recuperación de información de una vacuna (fila única).
   - [X] <span style="font-family:monospace;color:red;">A</span> Por identificador.
   - [X] <span style="font-family:monospace;color:yellow;">M</span> Por nombre de vacuna.
 - [ ] Recuperación de información de recomendación.
-  - [ ] <span style="font-family:monospace;color:red;">A</span> Por organización (filas múltiples).
-  - [ ] <span style="font-family:monospace;color:yellow;">M</span> Por identificador (fila única). 
-  - [ ] <span style="font-family:monospace;color:green;">O</span> ¿Por descripciones? (filas múltiples, baja prioridad). 
+  - [X] <span style="font-family:monospace;color:red;">A</span> Por organización (filas múltiples).
+  - [X] <span style="font-family:monospace;color:yellow;">M</span> Por identificador (fila única). 
+  - [ ] <span style="font-family:monospace;color:green;">O</span> ¿Por descripciones? (filas múltiples). 
 - [ ] Recuperación de recomendaciones por vacuna.
   - [X] <span style="font-family:monospace;color:red;">A</span> Por vacuna (filas múltiples). 
   - [ ] <span style="font-family:monospace;color:green;">B</span> Por fechas (filas múltiples). 
-- [ ] Recuperación de estadísticas.
+- [X] Recuperación de estadísticas.
   - [X] <span style="font-family:monospace;color:yellow;">M</span> Por vacuna (filas múltiples). 
+- [X] Listado de estadísticas.
+  - [X] <span style="font-family:monospace;color:green;">B</span> Completas (filas múltiples). 
 
 <a name="func-modificacion-datos"></a>
 ### Funcionalidades de modificación de datos: 
 - [ ] Vacuna:
   - [X] <span style="font-family:monospace;color:red;">A</span> Inserción de vacuna.
-  - [ ] <span style="font-family:monospace;color:red;">A</span> Inserción de estadísticas de una vacuna.
+  - [X] <span style="font-family:monospace;color:red;">A</span> Inserción de estadísticas de una vacuna.
   - [ ] <span style="font-family:monospace;color:yellow;">M</span> Modificación de vacuna. 
 - [ ] Recomendación:
   - [X] <span style="font-family:monospace;color:red;">A</span> Inserción de recomendación. 
@@ -217,6 +219,9 @@ Errores a considerar:
     - <span style="font-family:monospace;">nombre_estadistica</span>
   - [ ] Valores duplicados en:
     - <span style="font-family:monospace;">nombre_estadistica</span>
+  - [ ] Números no admitidos:
+    - [ ] Parte entera demasiado grande.
+    - [ ] Parte decimal demasiado grande.
 - Estadística-vacuna:
   - [ ] Inexistencia de:
     - <span style="font-family:monospace;">nombre_vacuna</span>
