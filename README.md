@@ -66,6 +66,40 @@ psql -U testuser -d testdb -a -f script.sql
   pip install psycopg2
   ```
 
+<a id="estructura-bd"></a>
+## Estructura de la base de datos
+
+<span style="font-family:monospace;">vacuna</span>
+
+|     PK     |               |
+|:----------:|:-------------:|
+| cod_vacuna | nombre_vacuna |
+
+<span style="font-family:monospace;">estadistica</span>
+
+|       PK        |                    |
+|:---------------:|:------------------:|
+| cod_estadistica | nombre_estadistica |
+
+
+<span style="font-family:monospace;">recomendacion</span>
+
+|        PK         |              |             |
+|:-----------------:|:------------:|:-----------:|
+| cod_recomendacion | organizacion | descripcion |
+
+<span style="font-family:monospace;">recomendacion_vacuna</span>
+
+|   PK, FK   |      PK, FK       |                  |
+|:----------:|:-----------------:|:----------------:|
+| cod_vacuna | cod_recomendacion | fecha_aplicacion |
+
+<span style="font-family:monospace;">estadistica_vacuna</span>
+
+|   PK, FK   |     PK, FK      |       |             |
+|:----------:|:---------------:|:-----:|:-----------:|
+| cod_vacuna | cod_estadistica | valor | descripcion |
+
 <a id="dominio"></a>
 # Dominio
 
