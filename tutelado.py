@@ -20,6 +20,7 @@ DBUSER = "testuser"
 DBUSERPASS = "testpass"
 DBNAME = "testdb"
 
+
 # ------------------------------------------------------------
 
 
@@ -41,10 +42,26 @@ def disconnect_db(conn):
     conn.commit()
     conn.close()
 
+
 # ------------------------------------------------------------
 
 
 def get_cod_vacuna(cur, nombre_vacuna):
+    """
+    Dado el nombre de una vacuna, recupera de base de datos el código correspondiente a esta.
+
+    Parameters
+    ----------
+    cur:
+        Cursor con conexión a la base de datos donde se realiza la petición.
+    nombre_vacuna: str
+        Nombre de la vacuna por el que se va a realizar la búsqueda.
+
+    Returns
+    -------
+    cod_vacuna
+        Código (int) correspondiente a la fila encontrada por el nombre de vacuna.
+    """
     select_vac_cod = "select cod_vacuna from vacuna where nombre_vacuna=(%(v_nom)s)"
     valor_select_vac_cod = {'v_nom': nombre_vacuna}
     cur.execute(select_vac_cod, valor_select_vac_cod)
@@ -56,6 +73,21 @@ def get_cod_vacuna(cur, nombre_vacuna):
 
 
 def get_cod_estadistica(cur, nombre_estadistica):
+    """
+    Dado el nombre de una estadística, recupera de base de datos el código correspondiente a esta.
+
+    Parameters
+    ----------
+    cur:
+        Cursor con conexión a la base de datos donde se realiza la petición.
+    nombre_estadistica: str
+        Nombre de la estadística por el que se va a realizar la búsqueda.
+
+    Returns
+    -------
+    cod_estadistica
+        Código (int) correspondiente a la fila encontrada por el nombre de estadística.
+    """
     select_est_cod = "select cod_estadistica from estadistica where nombre_estadistica=(%(e_nom)s)"
     valor_select_est_cod = {'e_nom': nombre_estadistica}
     cur.execute(select_est_cod, valor_select_est_cod)
@@ -67,6 +99,18 @@ def get_cod_estadistica(cur, nombre_estadistica):
 
 
 def insert_vacuna(cur, v_cod, v_nom):
+    """
+    Ejecuta la sentencia de inserción de una vacuna en la tabla VACUNA.
+
+    Parameters
+    ----------
+    cur:
+        Cursor con conexión a la base de datos donde se realiza la inserción.
+    v_cod: int
+        Código de la vacuna a insertar.
+    v_nom: int
+        Nombre de la vacuna a insertar.
+    """
     sentencia_insert = "insert into vacuna(cod_vacuna, nombre_vacuna)" \
                        " values(%(v_cod)s,%(v_nom)s)"
     valores_insert = {'v_cod': v_cod, 'v_nom': v_nom}
@@ -74,6 +118,18 @@ def insert_vacuna(cur, v_cod, v_nom):
 
 
 def insert_estadistica(cur, e_cod, e_nom):
+    """
+    Ejecuta la sentencia de inserción de una vacuna en la tabla ESTADISTICA.
+
+    Parameters
+    ----------
+    cur:
+        Cursor con conexión a la base de datos donde se realiza la inserción.
+    e_cod: int
+        Código de la estadística a insertar.
+    e_nom: str
+        Nombre de la estadística a insertar.
+    """
     sentencia_insert = "insert into estadistica(cod_estadistica, nombre_estadistica)" \
                        " values(%(e_cod)s,%(e_nom)s)"
     valores_insert = {'e_cod': e_cod, 'e_nom': e_nom}
@@ -81,6 +137,20 @@ def insert_estadistica(cur, e_cod, e_nom):
 
 
 def insert_recomendacion(cur, r_cod, r_org, r_desc):
+    """
+    Ejecuta la sentencia de inserción de una recomendación en la tabla RECOMENDACION.
+
+    Parameters
+    ----------
+    cur:
+        Cursor con conexión a la base de datos donde se realiza la inserción.
+    r_cod: int
+        Código de la recomendación a insertar.
+    r_org: str
+        Nombre de la organización que propone la recomendación a insertar.
+    r_desc: str
+        Descripción de la recomendación a insertar.
+    """
     sentencia_insert = "insert into recomendacion(cod_recomendacion, organizacion, descripcion)" \
                        " values(%(r_cod)s,%(r_org)s,%(r_desc)s)"
     valores_insert = {'r_cod': r_cod, 'r_org': r_org, 'r_desc': r_desc}
@@ -88,20 +158,65 @@ def insert_recomendacion(cur, r_cod, r_org, r_desc):
 
 
 def insert_estadistica_vacuna(cur, v_cod, e_cod, e_valor, e_desc):
+    """
+    Ejecuta la sentencia de inserción de una estadística sobre una vacuna en la tabla ESTADISTICA_VACUNA.
+
+    Parameters
+    ----------
+    cur:
+        Cursor con conexión a la base de datos donde se realiza la inserción.
+    v_cod: int
+        Código de la vacuna sobre la que se guarda la estadística a insertar.
+    e_cod: int
+        Código de la estadística a insertar.
+    e_valor: float
+        Valor de la estadística a insertar.
+    e_desc: str
+        Breve descripción de la estadística a insertar.
+    """
     sentencia_insert = "insert into estadistica_vacuna(cod_vacuna, cod_estadistica, valor, descripcion)" \
                        " values(%(v_cod)s,%(e_cod)s,%(valor)s,%(desc)s)"
     valores_insert = {'v_cod': v_cod, 'e_cod': e_cod, 'valor': e_valor, 'desc': e_desc}
     cur.execute(sentencia_insert, valores_insert)
 
 
-def insert_recomendacion_vacuna(cur, v_cod, rv_cod, rv_fecha):
+def insert_recomendacion_vacuna(cur, v_cod, r_cod, rv_fecha):
+    """
+    Ejecuta la sentencia de inserción de una recomendación sobre una vacuna en la tabla RECOMENDACION_VACUNA.
+
+    Parameters
+    ----------
+    cur:
+        Cursor con conexión a la base de datos donde se realiza la inserción.
+    v_cod: int
+        Código de la vacuna sobre la que se propone la recomendación a insertar.
+    r_cod: int
+        Código de la recomendación a insertar.
+    rv_fecha: str
+        Fecha en la que se aplica la recomendación sobre la vacuna.
+    """
     sentencia_insert = "insert into recomendacion_vacuna(cod_vacuna, cod_recomendacion, fecha_aplicacion)" \
-                       " values(%(v_cod)s,%(rv_cod)s,%(rv_fecha)s)"
-    valores_insert = {'v_cod': v_cod, 'rv_cod': rv_cod, 'rv_fecha': rv_fecha}
+                       " values(%(v_cod)s,%(r_cod)s,%(rv_fecha)s)"
+    valores_insert = {'v_cod': v_cod, 'rv_cod': r_cod, 'rv_fecha': rv_fecha}
     cur.execute(sentencia_insert, valores_insert)
 
 
 def form_generico(nombre_data):
+    """
+    Función que abstrae la adquisición de códigos identificadores y nombres sobre un dato pasado por parámetro.
+
+    Parameters
+    ----------
+    nombre_data: str
+        Nombre que se desea mostrar al usuario como información de lo que se le pide.
+
+    Returns
+    -------
+    data:
+        Diccionario de datos que cuenta con los parámetros:
+        <código> Asignado a la clave "cod" y
+        <nombre> Asignado a la clave "nom"
+    """
     scod = input(f"Codigo de {nombre_data}: ")
     cod = None if scod == "" else int(scod)
 
@@ -113,6 +228,20 @@ def form_generico(nombre_data):
 
 
 def error_control_generico(nombre_data, cod, nom, error):
+    """
+    Formatea información genérica sobre un error dado sobre un elemento.
+
+    Parameters
+    ----------
+    nombre_data:
+        El nombre del objeto que se desea mostrar al usuario.
+    cod:
+        El atributo identificador (clave primaria) del objeto.
+    nom:
+        El atributo de nombre del objeto.
+    error:
+        El error a formatear.
+    """
     if error.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
         print("La tabla no existe.")
     elif error.pgcode == psycopg2.errorcodes.NOT_NULL_VIOLATION:
@@ -130,6 +259,15 @@ def error_control_generico(nombre_data, cod, nom, error):
 
 
 def agregar_vacuna(conn):
+    """
+    Intenta insertar en la base de datos una nueva fila sobre la tabla VACUNA con los datos
+    otorgados por el usuario.
+
+    Parameters
+    ----------
+    conn:
+        La conexión a la base de datos.
+    """
     inputs = form_generico('vacuna')
     v_cod = inputs['cod']
     v_nom = inputs['nom']
@@ -145,6 +283,15 @@ def agregar_vacuna(conn):
 
 
 def agregar_estadistica(conn):
+    """
+    Intenta insertar en la base de datos una nueva fila sobre la tabla ESTADISTICA con los datos
+    otorgados por el usuario.
+
+    Parameters
+    ----------
+    conn:
+        La conexión a la base de datos.
+    """
     inputs = form_generico('estadistica')
     e_cod = inputs['cod']
     e_nom = inputs['nom']
@@ -159,38 +306,47 @@ def agregar_estadistica(conn):
             conn.rollback()
 
 
-def form_agregar_recomendacion_vacuna():
-    scod = input("Codigo de recomendación: ")
-    cod = None if scodr == "" else int(scodr)
+def form_agregar_recomendacion():
+    """
+    Obtiene del usuario la información necesaria para poder realizar la inserción de una nueva fila en la entidad
+    RECOMENDACION.
 
-    snome = input("Organización: ")
-    nombre = None if scodv == "" else scodv.upper()
+    Returns
+    -------
+    data:
+        Diccionario de datos con los siguientes elementos:
+        <código> con clave 'cod_r',
+        <organización> con clave 'org',
+        <descripción> con clave 'desc'
+    """
+    scod = input("Codigo de recomendación: ")
+    cod_r = None if scod == "" else int(scod)
+
+    sorg = input("Organización: ")
+    org = None if sorg == "" else sorg.upper()
 
     sdesc = input("Descripción de recomendación: ")
-    desc = None if sdate == "" else sdate
-    return {'cod_r': cod_r, 'cod_v': cod_v, 'date': date}
-    
-def form_agregar_recomendacion():
-    scod = input("Codigo de recomendación: ")
-    cod = None if scod == "" else int(scod)
-
-    snome = input("Código de la vacuna")
-    nombre = None if snome == "" else snome.upper()
-
-    sdesc = input("Fecha de aplicación de la recomendación: ")
     desc = None if sdesc == "" else sdesc
-    return {'cod': cod, 'nom': nombre, 'desc': desc}
+    return {'cod_r': cod_r, 'org': org, 'desc': desc}
 
 
 def agregar_recomendacion(conn):
+    """
+    Trata de agregar una nueva fila a la entidad RECOMENDACION con datos otorgados por el usuario.
+
+    Parameters
+    ----------
+    conn:
+        La conexión con la base de datos.
+    """
     inputs = form_agregar_recomendacion()
     r_cod = inputs['cod']
     r_nom = inputs['nom']
     r_desc = inputs['desc']
-    
+
     with conn.cursor() as cur:
         try:
-            insert_recomendacion(cur, r_cod, r_nom, r_desc)
+            insert_recomendacion_vacuna(cur, r_cod, r_nom, r_desc)
             conn.commit()
             print("Recomendación registrada")
         except psycopg2.Error as e:
@@ -209,38 +365,67 @@ def agregar_recomendacion(conn):
             else:
                 print(f"Error genérico: {e.pgcode} : {e.pgerror}")
             conn.rollback()
-            
-            
 
 
-def agregar_recomendacion_vacuna(conn):
-	inputs = form_agregar_recomendacion()
-	r_cod = inputs['cod_r']
-	v_cod = inputs['cod_v']
-	r_date = inputs['date']
+def form_registrar_recomendacion_vacuna():
+    """
+    Obtiene del usuario la información necesaria para poder realizar la inserción de una nueva fila en la entidad
+    RECOMENDACION_VACUNA.
 
-	with conn.cursor() as cur:
-		try:
-			insert_recomendacion(cur, r_cod, v_cod, r_date)
-			conn.commit()
-			print("Recomendación para la vacuna registrada")
-		except psycopg2.Error as e:
-			if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
-				print("La tabla no existe.")
-			elif e.pgcode == psycopg2.errorcodes.NOT_NULL_VIOLATION:
-				if "cod_vacuna" in e.pgerror:
-					print("El código de recomendación es obligatorio.")
-				elif "organizacion" in e.pgerror:
-					print("La fecha de la recomendación es obligatoria.")
-				else:
-					print("El código de vacuna para la recomendación es obligatorio.")
-			elif e.pgcode == psycopg2.errorcodes.UNIQUE_VIOLATION:
-				if "cod_recomendacion" in e.pgerror:
-					print(f"El par de código de recomendación y vacunación {r_cod, v_cod} ya existe")
-			else:
-				print(f"Error genérico: {e.pgcode} : {e.pgerror}")
-			conn.rollback()
-	
+    Returns
+    -------
+    data:
+        Diccionario de datos con los siguientes elementos:
+        <código de la recomendación> con clave 'cod_r',
+        <código de la vacuna> con clave 'cod_v',
+        <fecha de aplicación de la recomendación> con clave 'fecha'
+    """
+    scodr = input("Codigo de recomendación: ")
+    cod_r = None if scodr == "" else int(scodr)
+
+    scodv = input("Código de la vacuna: ")
+    cod_v = None if scodv == "" else int(scodv)
+
+    sfecha = input("Fecha de aplicación de la recomendación: ")
+    fecha = None if sfecha == "" else sfecha
+    return {'cod_r': cod_r, 'cod_v': cod_v, 'fecha': fecha}
+
+
+def registrar_recomendacion_vacuna(conn):
+    """
+    Trata de agregar una nueva fila a la entidad RECOMENDACION_VACUNA con datos otorgados por el usuario.
+
+    Parameters
+    ----------
+    conn:
+        La conexión con la base de datos.
+    """
+    inputs = form_registrar_recomendacion_vacuna()
+    r_cod = inputs['cod_r']
+    v_cod = inputs['cod_v']
+    r_date = inputs['date']
+
+    with conn.cursor() as cur:
+        try:
+            insert_recomendacion(cur, r_cod, v_cod, r_date)
+            conn.commit()
+            print("Recomendación para la vacuna registrada")
+        except psycopg2.Error as e:
+            if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
+                print("La tabla no existe.")
+            elif e.pgcode == psycopg2.errorcodes.NOT_NULL_VIOLATION:
+                if "cod_vacuna" in e.pgerror:
+                    print("El código de recomendación es obligatorio.")
+                elif "organizacion" in e.pgerror:
+                    print("La fecha de la recomendación es obligatoria.")
+                else:
+                    print("El código de vacuna para la recomendación es obligatorio.")
+            elif e.pgcode == psycopg2.errorcodes.UNIQUE_VIOLATION:
+                if "cod_recomendacion" in e.pgerror:
+                    print(f"El par de código de recomendación y vacunación {r_cod, v_cod} ya existe")
+            else:
+                print(f"Error genérico: {e.pgcode} : {e.pgerror}")
+            conn.rollback()
 
 
 # ------------------------------------------------------------
@@ -255,6 +440,19 @@ def agregar_recomendacion_vacuna(conn):
 
 
 def buscar_estadisticas_vacuna(conn, control_tx=True):
+    """
+    Realiza una búsqueda en la base de datos sobre la tabla ESTADISTICA_VACUNA en base a un código o nombre de una vacuna
+    otorgado por el usuario.
+
+    Parameters
+    ----------
+    conn:
+        La conexión con la base de datos.
+    control_tx:
+        Variable de control transaccional, predeterminado TRUE.
+        Si TRUE entonces se realiza control transaccional,
+        Si FALSE no se realiza.
+    """
     cod_search = False
     scod = input("Codigo o nombre de vacuna: ")
     if scod == "":
@@ -307,6 +505,19 @@ def buscar_estadisticas_vacuna(conn, control_tx=True):
 
 
 def buscar_recomendaciones_vacuna(conn, control_tx=True):
+    """
+    Realiza una búsqueda en la base de datos sobre la tabla RECOMENDACIONES_VACUNA en base a un código o nombre de una vacuna
+    otorgado por el usuario.
+
+    Parameters
+    ----------
+    conn:
+        La conexión con la base de datos.
+    control_tx:
+        Variable de control transaccional, predeterminado TRUE.
+        Si TRUE entonces se realiza control transaccional,
+        Si FALSE no se realiza.
+    """
     cod_search = False
     scod = input("Codigo o nombre de vacuna: ")
     if scod == "":
@@ -359,6 +570,14 @@ def buscar_recomendaciones_vacuna(conn, control_tx=True):
 
 
 def listar_estadisticas(conn):
+    """
+    Realiza una búsqueda en la base de datos sobre la tabla ESTADISTICAS y lista todas las filas encontradas.
+
+    Parameters
+    ----------
+    conn:
+        La conexión con la base de datos.
+    """
     sql = "select * from estadistica"
 
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
@@ -374,7 +593,20 @@ def listar_estadisticas(conn):
 
 
 # Registrar Estadísticas
-def form_registrar_estadistica():
+def form_registrar_estadistica_vacuna():
+    """
+    Obtiene del usuario la información necesaria para poder realizar la inserción de una nueva fila en la entidad
+    ESTADISTICA_VACUNA.
+
+    Returns
+    -------
+    data:
+        Diccionario de datos con los siguientes elementos:
+        <criterio de igualdad de la vacuna> con clave 'v_criteria',
+        <criterio de igualdad de la estadística> con clave 'e_criteria',
+        <valor de la estadística> con clave 'e_valor',
+        <descripicón de la estadística> con clave 'e_desc'
+    """
     sv_cod = input("Codigo o nombre de vacuna: ")
     if sv_cod == "":
         v_criteria = None
@@ -401,7 +633,20 @@ def form_registrar_estadistica():
             'e_valor': e_valor, 'e_desc': e_desc}
 
 
-def registrar_estadistica_control_errores(e, v_cod, e_cod):
+def registrar_estadistica_vacuna_control_errores(e, v_cod, e_cod):
+    """
+    Formatea los errores que se hayan podido dar en la realización de la transacción de inserción de una estadística
+    sobre una vacuna.
+
+    Parameters
+    ----------
+    e:
+        El error.
+    v_cod:
+        El valor del atributo "cod_vacuna" (código de vacuna) a registrar.
+    e_cod:
+        El valor del atributo "cod_estadistica" (código de estadistica) a registrar.
+    """
     if e.pgcode == psycopg2.errorcodes.UNIQUE_VIOLATION:
         print(f"\nFALLO: Violación de clave primaria."
               f"\nYa existe un registro para la estadística ({e_cod}) sobre la vacuna ({v_cod})")
@@ -422,7 +667,15 @@ def registrar_estadistica_control_errores(e, v_cod, e_cod):
 
 
 def registrar_estadistica_vacuna(conn):
-    inputs = form_registrar_estadistica()
+    """
+    Trata de registrar una nueva fila sobre la entidad ESTADISTICA_VACUNA con los datos otorgados por el usuario.
+
+    Parameters
+    ----------
+    conn:
+        La conexión con la base de datos.
+    """
+    inputs = form_registrar_estadistica_vacuna()
     v_criteria = inputs['v_criteria']
     e_criteria = inputs['e_criteria']
     e_valor = inputs['e_valor']
@@ -453,12 +706,19 @@ def registrar_estadistica_vacuna(conn):
             conn.commit()
             print(f"Estadística registrada.")
         except psycopg2.Error as e:
-            registrar_estadistica_control_errores(e, v_criteria, e_criteria)
+            registrar_estadistica_vacuna_control_errores(e, v_criteria, e_criteria)
             conn.rollback()
 
 
-
 def listar_recomendaciones(conn):
+    """
+    Realiza una búsqueda en la base de datos sobre la tabla RECOMENDACIONES y lista todas las filas encontradas.
+
+    Parameters
+    ----------
+    conn:
+        La conexión con la base de datos.
+    """
     sql = "select * from recomendacion"
 
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
@@ -476,6 +736,15 @@ def listar_recomendaciones(conn):
 
 
 def buscar_recomendaciones(conn):
+    """
+    Realiza una búsqueda en la base de datos sobre la tabla RECOMENDACIONES en base a un código de recomendación
+    o nombre de organización otorgado por el usuario.
+
+    Parameters
+    ----------
+    conn:
+        La conexión con la base de datos.
+    """
     cod_search = False
     scod = input("Criterio de búsqueda (código para búsqueda específica, nombre para organización): \n>")
     if scod == "":
@@ -517,35 +786,38 @@ def buscar_recomendaciones(conn):
                           f"\n\t Descripción: {desc}")
         except psycopg2.Error as e:
             print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
-            
+
+
 def form_borrar_recomendaciones():
-	scodr = input("Codigo de recomendación: ")
-	codr = None if scodr == "" else int(scodr)
+    scodr = input("Codigo de recomendación: ")
+    cod_r = None if scodr == "" else int(scodr)
 
-	scodv = input("Organización: ")
-	codv = None if scodv == "" else scodv.upper()
+    scodv = input("Organización: ")
+    cod_v = None if scodv == "" else scodv.upper()
 
-	return {'cod_r': cod_r, 'cod_v': cod_v}       
+    return {'cod_r': cod_r, 'cod_v': cod_v}
+
 
 def borrar_recomendaciones_vacuna(conn):
-	inputs = form_agregar_recomendacion()
-	r_cod = inputs['cod_r']
-	v_cod = inputs['cod_v']
+    inputs = form_agregar_recomendacion()
+    r_cod = inputs['cod_r']
+    v_cod = inputs['cod_v']
 
-	with conn.cursor() as cur:
-		try:
-			sql = "delete from recomendacion_vacuna where cod_vacuna= (%(v_cod)i) and cod_recomendacion= (%(r_cod)i)"
+    with conn.cursor() as cur:
+        try:
+            sql = "delete from recomendacion_vacuna where cod_vacuna= (%(v_cod)i) and cod_recomendacion= (%(r_cod)i)"
 
-			cur.execute(sql,conn)
-			conn.commit()
-			print(f"Recomendación de vacuna borrada.")
-		except psycopg2.Error as e:
-			if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
-				print("ERRO: a táboa non existe")
-			else:
-				print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
-			conn.rollback()
-			
+            cur.execute(sql, conn)
+            conn.commit()
+            print(f"Recomendación de vacuna borrada.")
+        except psycopg2.Error as e:
+            if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
+                print("ERRO: a táboa non existe")
+            else:
+                print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
+            conn.rollback()
+
+
 def menu_recomendaciones(conn):
     MENU_TEXT = """
           -- MENÚ > Ver recomendaciones--
@@ -575,7 +847,8 @@ def menu(conn):
 1 - Añadir vacuna           2 - Añadir recomendación       3 - Añadir estadística
 4 - Estadísticas de vacuna  5 - Recomendaciones de vacuna
 6 - Ver recomendaciones     7 - Listar estadísticas
-8 - Registrar estadística de vacuna
+8 - Registrar estadística de vacuna 
+9 - Registrar recomendación sobre vacuna
 q - Saír   
 """
     while True:
@@ -588,19 +861,19 @@ q - Saír
         elif tecla == '2':
             agregar_recomendacion(conn)
         elif tecla == '3':
-            agregar_recomendacion_vacuna(conn)
-        elif tecla == '4':
             agregar_estadistica(conn)
-        elif tecla == '5':
+        elif tecla == '4':
             buscar_estadisticas_vacuna(conn, False)
-        elif tecla == '6':
+        elif tecla == '5':
             buscar_recomendaciones_vacuna(conn, False)
-        elif tecla == '7':
+        elif tecla == '6':
             menu_recomendaciones(conn)
-        elif tecla == '8':
+        elif tecla == '7':
             listar_estadisticas(conn)
-        elif tecla == '9':
+        elif tecla == '8':
             registrar_estadistica_vacuna(conn)
+        elif tecla == '9':
+            registrar_recomendacion_vacuna(conn)
 
 
 # ------------------------------------------------------------
