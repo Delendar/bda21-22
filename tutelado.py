@@ -159,14 +159,25 @@ def agregar_estadistica(conn):
             conn.rollback()
 
 
+def form_agregar_recomendacion_vacuna():
+    scod = input("Codigo de recomendación: ")
+    cod = None if scodr == "" else int(scodr)
+
+    snome = input("Organización: ")
+    nombre = None if scodv == "" else scodv.upper()
+
+    sdesc = input("Descripción de recomendación: ")
+    desc = None if sdate == "" else sdate
+    return {'cod_r': cod_r, 'cod_v': cod_v, 'date': date}
+    
 def form_agregar_recomendacion():
     scod = input("Codigo de recomendación: ")
     cod = None if scod == "" else int(scod)
 
-    snome = input("Organización: ")
+    snome = input("Código de la vacuna")
     nombre = None if snome == "" else snome.upper()
 
-    sdesc = input("Descripción de recomendación: ")
+    sdesc = input("Fecha de aplicación de la recomendación: ")
     desc = None if sdesc == "" else sdesc
     return {'cod': cod, 'nom': nombre, 'desc': desc}
 
@@ -176,7 +187,7 @@ def agregar_recomendacion(conn):
     r_cod = inputs['cod']
     r_nom = inputs['nom']
     r_desc = inputs['desc']
-
+    
     with conn.cursor() as cur:
         try:
             insert_recomendacion(cur, r_cod, r_nom, r_desc)
@@ -198,6 +209,38 @@ def agregar_recomendacion(conn):
             else:
                 print(f"Error genérico: {e.pgcode} : {e.pgerror}")
             conn.rollback()
+            
+            
+
+
+def agregar_recomendacion_vacuna(conn):
+	inputs = form_agregar_recomendacion()
+	r_cod = inputs['cod_r']
+	v_cod = inputs['cod_v']
+	r_date = inputs['date']
+
+	with conn.cursor() as cur:
+		try:
+			insert_recomendacion(cur, r_cod, v_cod, r_date)
+			conn.commit()
+			print("Recomendación para la vacuna registrada")
+		except psycopg2.Error as e:
+			if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
+				print("La tabla no existe.")
+			elif e.pgcode == psycopg2.errorcodes.NOT_NULL_VIOLATION:
+				if "cod_vacuna" in e.pgerror:
+					print("El código de recomendación es obligatorio.")
+				elif "organizacion" in e.pgerror:
+					print("La fecha de la recomendación es obligatoria.")
+				else:
+					print("El código de vacuna para la recomendación es obligatorio.")
+			elif e.pgcode == psycopg2.errorcodes.UNIQUE_VIOLATION:
+				if "cod_recomendacion" in e.pgerror:
+					print(f"El par de código de recomendación y vacunación {r_cod, v_cod} ya existe")
+			else:
+				print(f"Error genérico: {e.pgcode} : {e.pgerror}")
+			conn.rollback()
+	
 
 
 # ------------------------------------------------------------
@@ -414,6 +457,7 @@ def registrar_estadistica_vacuna(conn):
             conn.rollback()
 
 
+
 def listar_recomendaciones(conn):
     sql = "select * from recomendacion"
 
@@ -473,8 +517,35 @@ def buscar_recomendaciones(conn):
                           f"\n\t Descripción: {desc}")
         except psycopg2.Error as e:
             print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
+            
+def form_borrar_recomendaciones():
+	scodr = input("Codigo de recomendación: ")
+	codr = None if scodr == "" else int(scodr)
 
+	scodv = input("Organización: ")
+	codv = None if scodv == "" else scodv.upper()
 
+	return {'cod_r': cod_r, 'cod_v': cod_v}       
+
+def borrar_recomendaciones_vacuna(conn):
+	inputs = form_agregar_recomendacion()
+	r_cod = inputs['cod_r']
+	v_cod = inputs['cod_v']
+
+	with conn.cursor() as cur:
+		try:
+			sql = "delete from recomendacion_vacuna where cod_vacuna= (%(v_cod)i) and cod_recomendacion= (%(r_cod)i)"
+
+			cur.execute(sql,conn)
+			conn.commit()
+			print(f"Recomendación de vacuna borrada.")
+		except psycopg2.Error as e:
+			if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
+				print("ERRO: a táboa non existe")
+			else:
+				print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
+			conn.rollback()
+			
 def menu_recomendaciones(conn):
     MENU_TEXT = """
           -- MENÚ > Ver recomendaciones--
@@ -517,16 +588,18 @@ q - Saír
         elif tecla == '2':
             agregar_recomendacion(conn)
         elif tecla == '3':
-            agregar_estadistica(conn)
+            agregar_recomendacion_vacuna(conn)
         elif tecla == '4':
-            buscar_estadisticas_vacuna(conn, False)
+            agregar_estadistica(conn)
         elif tecla == '5':
-            buscar_recomendaciones_vacuna(conn, False)
+            buscar_estadisticas_vacuna(conn, False)
         elif tecla == '6':
-            menu_recomendaciones(conn)
+            buscar_recomendaciones_vacuna(conn, False)
         elif tecla == '7':
-            listar_estadisticas(conn)
+            menu_recomendaciones(conn)
         elif tecla == '8':
+            listar_estadisticas(conn)
+        elif tecla == '9':
             registrar_estadistica_vacuna(conn)
 
 
