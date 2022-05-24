@@ -14,6 +14,8 @@ import psycopg2
 import psycopg2.extras
 import psycopg2.errorcodes
 import sys
+import datetime
+from datetime import datetime
 
 DBHOST = "localhost"
 DBUSER = "testuser"
@@ -196,8 +198,8 @@ def insert_recomendacion_vacuna(cur, v_cod, r_cod, rv_fecha):
         Fecha en la que se aplica la recomendación sobre la vacuna.
     """
     sentencia_insert = "insert into recomendacion_vacuna(cod_vacuna, cod_recomendacion, fecha_aplicacion)" \
-                       " values(%(v_cod)s,%(r_cod)s,%(rv_fecha)s)"
-    valores_insert = {'v_cod': v_cod, 'rv_cod': r_cod, 'rv_fecha': rv_fecha}
+                       " values(%(r_cod)s,%(v_cod)s,to_date(%(rv_fecha)s,'DD/MM/YY'))"
+    valores_insert = {'r_cod': r_cod, 'v_cod': v_cod, 'rv_fecha': rv_fecha}
     cur.execute(sentencia_insert, valores_insert)
 
 
@@ -327,7 +329,7 @@ def form_agregar_recomendacion():
 
     sdesc = input("Descripción de recomendación: ")
     desc = None if sdesc == "" else sdesc
-    return {'cod_r': cod_r, 'org': org, 'desc': desc}
+    return {'cod': cod_r, 'nom': org, 'desc': desc}
 
 
 def agregar_recomendacion(conn):
@@ -346,7 +348,7 @@ def agregar_recomendacion(conn):
 
     with conn.cursor() as cur:
         try:
-            insert_recomendacion_vacuna(cur, r_cod, r_nom, r_desc)
+            insert_recomendacion(cur, r_cod, r_nom, r_desc)
             conn.commit()
             print("Recomendación registrada")
         except psycopg2.Error as e:
@@ -386,9 +388,9 @@ def form_registrar_recomendacion_vacuna():
     scodv = input("Código de la vacuna: ")
     cod_v = None if scodv == "" else int(scodv)
 
-    sfecha = input("Fecha de aplicación de la recomendación: ")
+    sfecha = input("Fecha de aplicación de la recomendación(dd/mm/yy): ")
     fecha = None if sfecha == "" else sfecha
-    return {'cod_r': cod_r, 'cod_v': cod_v, 'fecha': fecha}
+    return {'rec': cod_r, 'vac': cod_v, 'fecha': fecha}
 
 
 def registrar_recomendacion_vacuna(conn):
@@ -401,13 +403,14 @@ def registrar_recomendacion_vacuna(conn):
         La conexión con la base de datos.
     """
     inputs = form_registrar_recomendacion_vacuna()
-    r_cod = inputs['cod_r']
-    v_cod = inputs['cod_v']
-    r_date = inputs['date']
+    print(inputs)
+    r_cod = inputs['rec']
+    v_cod = inputs['vac']
+    r_date = inputs['fecha']
 
     with conn.cursor() as cur:
         try:
-            insert_recomendacion(cur, r_cod, v_cod, r_date)
+            insert_recomendacion_vacuna(cur, r_cod, v_cod, r_date)
             conn.commit()
             print("Recomendación para la vacuna registrada")
         except psycopg2.Error as e:
@@ -420,9 +423,6 @@ def registrar_recomendacion_vacuna(conn):
                     print("La fecha de la recomendación es obligatoria.")
                 else:
                     print("El código de vacuna para la recomendación es obligatorio.")
-            elif e.pgcode == psycopg2.errorcodes.UNIQUE_VIOLATION:
-                if "cod_recomendacion" in e.pgerror:
-                    print(f"El par de código de recomendación y vacunación {r_cod, v_cod} ya existe")
             else:
                 print(f"Error genérico: {e.pgcode} : {e.pgerror}")
             conn.rollback()
@@ -789,25 +789,25 @@ def buscar_recomendaciones(conn):
 
 
 def form_borrar_recomendaciones():
-    scodr = input("Codigo de recomendación: ")
+    scodr = input("Código de recomendación: ")
     cod_r = None if scodr == "" else int(scodr)
 
-    scodv = input("Organización: ")
+    scodv = input("Código de vacuna: ")
     cod_v = None if scodv == "" else scodv.upper()
 
     return {'cod_r': cod_r, 'cod_v': cod_v}
 
 
 def borrar_recomendaciones_vacuna(conn):
-    inputs = form_agregar_recomendacion()
+    inputs = form_borrar_recomendaciones()
     r_cod = inputs['cod_r']
     v_cod = inputs['cod_v']
 
     with conn.cursor() as cur:
         try:
-            sql = "delete from recomendacion_vacuna where cod_vacuna= (%(v_cod)i) and cod_recomendacion= (%(r_cod)i)"
+            sql = "delete from recomendacion_vacuna where cod_vacuna= (%(cod_v)s) and cod_recomendacion= (%(cod_r)s)"
 
-            cur.execute(sql, conn)
+            cur.execute(sql, inputs)
             conn.commit()
             print(f"Recomendación de vacuna borrada.")
         except psycopg2.Error as e:
@@ -849,6 +849,7 @@ def menu(conn):
 6 - Ver recomendaciones     7 - Listar estadísticas
 8 - Registrar estadística de vacuna 
 9 - Registrar recomendación sobre vacuna
+a - Borrar una recomendación de una vacuna
 q - Saír   
 """
     while True:
@@ -874,6 +875,8 @@ q - Saír
             registrar_estadistica_vacuna(conn)
         elif tecla == '9':
             registrar_recomendacion_vacuna(conn)
+        elif tecla == 'a':
+            borrar_recomendaciones_vacuna(conn)
 
 
 # ------------------------------------------------------------
