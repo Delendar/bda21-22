@@ -279,6 +279,7 @@ def agregar_vacuna(conn):
             insert_vacuna(cur, v_cod, v_nom)
             conn.commit()
             print("Vacuna añadida")
+            menu_vacuna(conn, v_cod)
         except psycopg2.Error as e:
             error_control_generico('vacuna', v_cod, v_nom, e)
             conn.rollback()
@@ -350,7 +351,8 @@ def agregar_recomendacion(conn):
         try:
             insert_recomendacion(cur, r_cod, r_nom, r_desc)
             conn.commit()
-            print("Recomendación registrada")
+            return r_cod
+            print("Recomendación registrada")            
         except psycopg2.Error as e:
             if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
                 print("La tabla no existe.")
@@ -869,6 +871,43 @@ def modificar_recomendacion(conn):
             else:
                 print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
             conn.rollback()
+            
+def menu_vacuna(conn,vac):
+    MENU_TEXT = """
+          -- MENÚ > Quieres añadir una recomendación para la nueva vacuna?--
+    1 - Añadir
+    q - No 
+    """
+    while True:
+        print(MENU_TEXT)
+        tecla = input('Opción> ')
+        if tecla == 'q':
+            break
+        elif tecla == '1':
+            rec = agregar_recomendacion(conn)
+            conectar_vacuna_recomendacion(conn, vac, rec)
+
+def conectar_vacuna_recomendacion(conn,vac,rec):
+    
+    with conn.cursor() as cur:
+        try:
+            insert_recomendacion_vacuna(cur, rec, vac, datetime.now().strftime("%d/%m/%Y"))
+            conn.commit()
+            print("Recomendación para la vacuna registrada")
+        except psycopg2.Error as e:
+            if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
+                print("La tabla no existe.")
+            elif e.pgcode == psycopg2.errorcodes.NOT_NULL_VIOLATION:
+                if "cod_vacuna" in e.pgerror:
+                    print("El código de recomendación es obligatorio.")
+                elif "organizacion" in e.pgerror:
+                    print("La fecha de la recomendación es obligatoria.")
+                else:
+                    print("El código de vacuna para la recomendación es obligatorio.")
+            else:
+                print(f"Error genérico: {e.pgcode} : {e.pgerror}")
+            conn.rollback()
+    
     
 
 
