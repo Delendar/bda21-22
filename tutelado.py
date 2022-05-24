@@ -403,7 +403,6 @@ def registrar_recomendacion_vacuna(conn):
         La conexión con la base de datos.
     """
     inputs = form_registrar_recomendacion_vacuna()
-    print(inputs)
     r_cod = inputs['rec']
     v_cod = inputs['vac']
     r_date = inputs['fecha']
@@ -789,6 +788,17 @@ def buscar_recomendaciones(conn):
 
 
 def form_borrar_recomendaciones():
+    """
+    Obtiene del usuario la información necesaria para poder borrar una fila en la entidad
+    RECOMENDACION_VACUNA.
+
+    Returns
+    -------
+    data:
+        Diccionario de datos con los siguientes elementos:
+        <código de la recomendación> con clave 'cod_r',
+        <código de la vacuna> con clave 'cod_v'
+    """
     scodr = input("Código de recomendación: ")
     cod_r = None if scodr == "" else int(scodr)
 
@@ -816,6 +826,50 @@ def borrar_recomendaciones_vacuna(conn):
             else:
                 print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
             conn.rollback()
+            
+def form_modificar_recomendacion():
+    """
+    Obtiene del usuario la información necesaria para poder realizar la modificación de una fila en la entidad
+    RECOMENDACION.
+
+    Returns
+    -------
+    data:
+        Diccionario de datos con los siguientes elementos:
+        <código> con clave 'cod_r',
+        <organización> con clave 'org',
+        <descripción> con clave 'desc'
+    """
+    scod = input("Codigo de la recomendación que se quiere modificar: ")
+    cod_r = None if scod == "" else int(scod)
+
+    sorg = input("Nuevo nombre de organización: ")
+    org = None if sorg == "" else sorg.upper()
+
+    sdesc = input("Descripción de recomendación: ")
+    desc = None if sdesc == "" else sdesc
+    return {'cod': cod_r, 'nom': org, 'desc': desc}
+    
+def modificar_recomendacion(conn):
+    inputs= form_modificar_recomendacion()
+    cod= inputs['cod']
+    org= inputs['nom']
+    desc= inputs['desc']
+    
+    with conn.cursor() as cur:
+        try:
+            sql = "update recomendacion set organizacion=(%(nom)s), descripcion=(%(desc)s) where cod_recomendacion= (%(cod)s)"
+
+            cur.execute(sql, inputs)
+            conn.commit()
+            print(f"Recomendación de modificada.")
+        except psycopg2.Error as e:
+            if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
+                print("ERRO: a táboa non existe")
+            else:
+                print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
+            conn.rollback()
+    
 
 
 def menu_recomendaciones(conn):
@@ -850,6 +904,7 @@ def menu(conn):
 8 - Registrar estadística de vacuna 
 9 - Registrar recomendación sobre vacuna
 a - Borrar una recomendación de una vacuna
+b - Modificar una recomendación
 q - Saír   
 """
     while True:
@@ -877,6 +932,8 @@ q - Saír
             registrar_recomendacion_vacuna(conn)
         elif tecla == 'a':
             borrar_recomendaciones_vacuna(conn)
+        elif tecla == 'b':
+            modificar_recomendacion(conn)
 
 
 # ------------------------------------------------------------

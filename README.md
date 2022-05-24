@@ -183,7 +183,7 @@ funcionalidades.
 - [ ] Recomendación:
   - [X] <span style="font-family:monospace;color:red;">A</span> Inserción de recomendación. 
   - [x] <span style="font-family:monospace;color:red;">A</span> Inserción de una recomendación para una vacuna. 
-  - [ ] <span style="font-family:monospace;color:red;">A</span> Modificación de recomendación 
+  - [x] <span style="font-family:monospace;color:red;">A</span> Modificación de recomendación 
   (mínimo 1 funcionalidad de modificación directa).
 - [ ] Estadísticas:
   - [X] <span style="font-family:monospace;color:red;">A</span> Inserción de estadísticas.
