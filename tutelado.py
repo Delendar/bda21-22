@@ -900,7 +900,7 @@ def conectar_vacuna_recomendacion(conn,vac,rec):
             elif e.pgcode == psycopg2.errorcodes.NOT_NULL_VIOLATION:
                 if "cod_vacuna" in e.pgerror:
                     print("El código de recomendación es obligatorio.")
-                elif "organizacion" in e.pgerror:
+                elif "cod_recomendacion" in e.pgerror:
                     print("La fecha de la recomendación es obligatoria.")
                 else:
                     print("El código de vacuna para la recomendación es obligatorio.")
@@ -908,6 +908,58 @@ def conectar_vacuna_recomendacion(conn,vac,rec):
                 print(f"Error genérico: {e.pgcode} : {e.pgerror}")
             conn.rollback()
     
+def form_aumento_vacuna():    
+    """
+    Obtiene del usuario la información necesaria para poder aumentar el valor de forma incremental del valor de una
+    vacuna en la entidad ESTADISTICAS_VACUNA.
+
+    Returns
+    -------
+    data:
+        Diccionario de datos con los siguientes elementos:
+        <código> con clave 'cod',
+        <porcentaje> con clave 'por'
+    """
+    scod = input("Código de vacuna: ")
+    cod = None if scod == "" else int(scod)
+    
+    ssta = input("Código de estadística: ")
+    sta = None if ssta == "" else int(ssta)
+
+    sorg = input("Incremento: ")
+    org = None if sorg == "" else sorg
+
+    return {'cod': cod,'sta': sta, 'por': org}
+
+    
+def aumento_vacuna(conn):
+    inputs= form_aumento_vacuna()
+    cod= inputs['cod']
+    sta= inputs['sta']
+    por= inputs['por']
+    
+    with conn.cursor() as cur:
+        try:
+            sql = "update estadistica_vacuna" 
+            
+            if por.find("%")!=-1:
+                por = por.replace("%","")
+                print(por)
+                sql = sql +" set valor = valor + valor *" + por + "/100"\
+                            "where cod_vacuna= (%(cod)s) and cod_estadistica = (%(sta)s)"
+            else:
+                sql = sql +" set valor = valor +" + por +\
+                            "where cod_vacuna= (%(cod)s) and cod_estadistica = (%(sta)s)"
+
+            cur.execute(sql, inputs)
+            conn.commit()
+            print(f"Valor modificado.")
+        except psycopg2.Error as e:
+            if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
+                print("ERRO: a táboa non existe")
+            else:
+                print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
+            conn.rollback()   
     
 
 
@@ -940,10 +992,9 @@ def menu(conn):
 1 - Añadir vacuna           2 - Añadir recomendación       3 - Añadir estadística
 4 - Estadísticas de vacuna  5 - Recomendaciones de vacuna
 6 - Ver recomendaciones     7 - Listar estadísticas
-8 - Registrar estadística de vacuna 
-9 - Registrar recomendación sobre vacuna
-a - Borrar una recomendación de una vacuna
-b - Modificar una recomendación
+8 - Registrar estadística de vacuna         9 - Registrar recomendación sobre vacuna
+a - Borrar una recomendación de una vacuna  b - Modificar una recomendación
+c - Aumentar el precio de una vacuna en valor de porcentaje
 q - Saír   
 """
     while True:
@@ -973,6 +1024,8 @@ q - Saír
             borrar_recomendaciones_vacuna(conn)
         elif tecla == 'b':
             modificar_recomendacion(conn)
+        elif tecla == 'c':
+            aumento_vacuna(conn)
 
 
 # ------------------------------------------------------------
@@ -992,136 +1045,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-# EJEMPLOS viejos
-
-
-# ------------------------------------------------------------
-def select_table(conn):
-    with conn.cursor() as cur:
-        cur.execute("select * from artigo")
-        row = cur.fetchone()
-        while row:
-            print(f"Fila número {cur.rownumber} de {cur.rowcount}: {row}")
-            row = cur.fetchone()
-
-
-# ------------------------------------------------------------
-def create_table(conn):
-    """
-    Crea a táboa artigo (codart, nomart, prezoart)
-    :param conn: a conexión aberta á bd
-    :return: Nada
-    """
-    sentenza_create = """
-      create table artigo(
-            codart int constraint pk_artigo primary key,
-            nomart varchar(30) not null,
-            prezoart numeric (5,2) constraint c_prezopos check (prezoart > 0))
-    """
-    with conn.cursor() as cur:
-        try:
-            cur.execute(sentenza_create)
-            conn.commit()
-            print("Táboa artigo creada")
-        except psycopg2.Error as e:
-            if e.pgcode == psycopg2.errorcodes.DUPLICATE_TABLE:
-                print("A táboa xa existe")
-            else:
-                print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
-            conn.rollback()
-
-
-# ------------------------------------------------------------
-def drop_table(conn):
-    """
-    Elimina a táboa artigo (codart, nomart, prezoart)
-    :param conn: a conexión aberta á bd
-    :return: Nada
-    """
-
-    sentenza_drop = """
-        drop table artigo
-    """
-    with conn.cursor() as cur:
-        try:
-            cur.execute(sentenza_drop)
-            conn.commit()
-            print("Táboa artigo borrada")
-        except psycopg2.Error as e:
-            if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
-                print("A táboa non existe")
-            else:
-                print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
-            conn.rollback()
-
-
-def show_row(conn, control_tx=True):
-    scod = input("Codigo: ")
-    cod = None if scod == "" else int(scod)
-
-    """    
-    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-        cur.execute(f"select * from artigo where codart={cod}")
-        row = cur.fetchone()
-        while row:
-            print(f"Fila número {cur.rownumber} de {cur.rowcount}: {row}")
-            row = cur.fetchone()
-    """
-
-    sql = "select nomart, prezoart from artigo where codart = %s"
-
-    retval = None
-    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-        try:
-            cur.execute(sql, (cod,))
-            row = cur.fetchone()
-            if row:
-                retval = cod
-                prezo = row['prezoart'] if row['prezoart'] else "Descoñecido"
-                print(f"Codigo: {prezo}; Nome: {row['nomart']}; Prezo: {prezo}")
-            else:
-                print(f"O artigo de código {cod} non existe.")
-            if control_tx:
-                conn.comit()
-        except psycopg2.Error as e:
-            print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
-            if control_tx:
-                conn.rollback()
-    return retval
-
-
-def update_price(conn):
-    conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED
-    cod = show_row(conn, control_tx=False)
-
-    if cod is None:
-        conn.rollback()
-        return
-
-    incremento = float(input("Introduce incremento de prezo:"))
-
-    sql = "update artigo set prezoart = prezoart + prezoart * %(incremento)s /100 where codart=%(cod)s"
-
-    with conn.cursor() as cur:
-        try:
-            cur.execute(sql, (cod,))
-            input("Pulsa una tecla")
-            conn.commit()
-            print("Artigo engadidos")
-        except psycopg2.Error as e:
-            if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
-                print("A táboa non existe")
-            elif e.pgcode == psycopg2.errorcodes.NOT_NULL_VIOLATION:
-                if "codart" in e.pgerror:
-                    print("O código é obrigatorio")
-                else:
-                    print("O nome é obrigatorio")
-            elif e.pgcode == psycopg2.errorcodes.CHECK_VIOLATION:
-                print("O prezo debe ser positivo")
-            elif e.pgcode == psycopg2.errorcodes.UNIQUE_VIOLATION:
-                print(f"O codigo de artigo {cod} xa existe")
-            else:
-                print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
-            conn.rollback()

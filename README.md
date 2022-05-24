@@ -187,7 +187,7 @@ funcionalidades.
   (mínimo 1 funcionalidad de modificación directa).
 - [ ] Estadísticas:
   - [X] <span style="font-family:monospace;color:red;">A</span> Inserción de estadísticas.
-  - [ ] <span style="font-family:monospace;color:red;">A</span> Modificación de estadística.
+  - [x] <span style="font-family:monospace;color:red;">A</span> Modificación de estadística.
   (mínimo 1 funcionalidad de modificación incremental).
 - [ ] Inserciones múltiples:
   - [x] <span style="font-family:monospace;color:red;">A</span> Inserción de recomendación y vacuna asociada.
