@@ -623,7 +623,7 @@ def registrar_estadistica_vacuna(conn):
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
         try:
             # Check si el dato es el nombre o es el codigo
-            if isinstance(v_criteria, str):
+            if v_criteria is not None and not v_criteria.lstrip("-").isdigit():
                 v_cod = get_cod_vacuna(cur, v_criteria)
                 if v_cod is None:
                     print(f"No se encontró ninguna vacuna con el nombre \"{v_criteria}\"")
@@ -632,7 +632,7 @@ def registrar_estadistica_vacuna(conn):
                 else:
                     v_criteria = v_cod
             # Check si el dato es el nombre o es el codigo
-            if isinstance(e_criteria, str):
+            if e_criteria is not None and not e_criteria.lstrip("-").isdigit():
                 e_cod = get_cod_estadistica(cur, e_criteria)
                 if e_cod is None:
                     print(f"No se encontró ninguna estadística con el nombre \"{e_criteria}\"")
@@ -650,6 +650,40 @@ def registrar_estadistica_vacuna(conn):
 
 
 # Search functionalities ------------------------------------------------------
+def listar_vacunas(conn, control_tx=True):
+    """
+    Realiza una búsqueda en la base de datos sobre la tabla VACUNAS y lista todas las filas encontradas.
+
+    Parameters
+    ----------
+    conn:
+        La conexión con la base de datos.
+    control_tx:
+        Variable de control transaccional, predeterminado TRUE.
+        Si TRUE entonces se realiza control transaccional,
+        Si FALSE no se realiza.
+    """
+    if control_tx:
+        conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED
+
+    sql = "select * from vacuna"
+
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        try:
+            cur.execute(sql)
+            record = cur.fetchall()
+            for row in record:
+                c_vac = row['cod_vacuna']
+                n_vac = row['nombre_vacuna']
+                print(f"({c_vac}) {n_vac}")
+            conn.commit()
+        except psycopg2.Error as e:
+            if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
+                print("\nERROR: La tabla no VACUNA no existe.")
+            print(f"\nFALLO: Error genérico: {e.pgcode} : {e.pgerror}")
+            conn.rollback()
+
+
 def listar_estadisticas(conn, control_tx=True):
     """
     Realiza una búsqueda en la base de datos sobre la tabla ESTADISTICA y lista todas las filas encontradas.
@@ -955,7 +989,7 @@ def form_borrar_estadistica_vacuna():
         código de la vacuna con clave 'cod_v'
     """
     scode = input("Código de estadística: ")
-    cod_e = None if scode == "" else int(scode)
+    cod_e = None if scode == "" else scode
 
     scodv = input("Código de vacuna: ")
     cod_v = None if scodv == "" else scodv.upper()
@@ -991,6 +1025,9 @@ def borrar_estadisticas_vacuna(conn):
         except psycopg2.Error as e:
             if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
                 print("\nERROR: la tabla ESTADISTICA_VACUNA no existe.")
+            elif e.pgcode == psycopg2.errorcodes.INVALID_TEXT_REPRESENTATION:
+                print("\nERROR: Representación no válida."
+                      "\nLos códigos identificadores deben de ser números.")
             else:
                 print(f"\nERROR: Error genérico: {e.pgcode} : {e.pgerror}")
             conn.rollback()
@@ -1009,7 +1046,7 @@ def form_borrar_recomendacion_vacuna():
         código de la vacuna con clave 'cod_v'
     """
     scodr = input("Código de recomendación: ")
-    cod_r = None if scodr == "" else int(scodr)
+    cod_r = None if scodr == "" else scodr
 
     scodv = input("Código de vacuna: ")
     cod_v = None if scodv == "" else scodv.upper()
@@ -1045,6 +1082,9 @@ def borrar_recomendaciones_vacuna(conn):
         except psycopg2.Error as e:
             if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
                 print("\nERROR: la tabla RECOMENDACION_VACUNA no existe.")
+            elif e.pgcode == psycopg2.errorcodes.INVALID_TEXT_REPRESENTATION:
+                print("\nERROR: Representación no válida."
+                      "\nLos códigos identificadores deben de ser números.")
             else:
                 print(f"\nERROR: Error genérico: {e.pgcode} : {e.pgerror}")
             conn.rollback()
@@ -1097,7 +1137,10 @@ def modificar_recomendacion(conn):
 
             cur.execute(sql, inputs)
             conn.commit()
-            print(f"Recomendación modificada.")
+            if cur.rowcount == 0:
+                print("No se encontraron filas que coincidieran con los criterios.")
+            else:
+                print(f"Recomendación modificada.")
         except psycopg2.Error as e:
             if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
                 print("\nERROR: La tabla no existe.")
@@ -1124,10 +1167,10 @@ def form_aumento_vacuna():
         porcentaje con clave 'por'
     """
     scod = input("Código de vacuna: ")
-    cod = None if scod == "" else int(scod)
+    cod = None if scod == "" else scod
 
     ssta = input("Código de estadística: ")
-    sta = None if ssta == "" else int(ssta)
+    sta = None if ssta == "" else ssta
 
     while True:
         sorg = input("Incremento (número o porcentaje): ")
@@ -1183,6 +1226,14 @@ def aumento_vacuna(conn):
                     print("\nEl código de la estadística es obligatorio.")
                 else:
                     print("\nEl valor del incremento es obligatorio")
+            elif e.pgcode == psycopg2.errorcodes.NUMERIC_VALUE_OUT_OF_RANGE:
+                print("\nERROR: Desbordamiento en el atributo valor (objetivo de incremento)."
+                      f"\nEl sistema solo admite números de {DBMAXDIGITCOUNT} en la parte entera "
+                      f"y {DBMAXFLOATDIGITCOUNT} decimales."
+                      f"\nEn caso de tener más de {DBMAXFLOATDIGITCOUNT} en la parte decimal, se truncará el número.")
+            elif e.pgcode == psycopg2.errorcodes.INVALID_TEXT_REPRESENTATION:
+                print("\nERROR: Representación no válida."
+                      "\nLos códigos identificadores deben de ser números.")
             else:
                 print(f"\nFALLO: Error genérico: {e.pgcode} : {e.pgerror}")
             conn.rollback()
@@ -1255,10 +1306,10 @@ def menu(conn):
       -- MENÚ --
 av - Añadir vacuna                          ar - Añadir recomendación                   ae - Añadir estadística
 re - Registrar estadística de vacuna        rr - Registrar recomendación sobre vacuna
-1 - Ver recomendaciones                     2 - Listar estadísticas
-3 - Ver estadísticas de vacuna              4 - Ver recomendaciones de vacuna
-5 - Modificar una recomendación             6 - Modificar estadística de vacuna
-7 - Borrar una recomendación de una vacuna  8 - Borrar una estadística de una vacuna
+1 - Listar vacunas                          2 - Listar estadísticas                     3 - Ver recomendaciones
+4 - Ver estadísticas de vacuna              5 - Ver recomendaciones de vacuna
+6 - Modificar una recomendación             7 - Modificar estadística de vacuna
+8 - Borrar una recomendación de una vacuna  9 - Borrar una estadística de una vacuna
 q - Salir   
 """
     while True:
@@ -1277,20 +1328,22 @@ q - Salir
         elif tecla.lower() == 'rr':
             registrar_recomendacion_vacuna(conn)
         elif tecla == '1':
-            menu_recomendaciones(conn)
+            listar_vacunas(conn)
         elif tecla == '2':
             listar_estadisticas(conn)
         elif tecla == '3':
-            buscar_estadisticas_vacuna(conn)
+            menu_recomendaciones(conn)
         elif tecla == '4':
-            buscar_recomendaciones_vacuna(conn)
+            buscar_estadisticas_vacuna(conn)
         elif tecla == '5':
-            modificar_recomendacion(conn)
+            buscar_recomendaciones_vacuna(conn)
         elif tecla == '6':
-            aumento_vacuna(conn)
+            modificar_recomendacion(conn)
         elif tecla == '7':
-            borrar_recomendaciones_vacuna(conn)
+            aumento_vacuna(conn)
         elif tecla == '8':
+            borrar_recomendaciones_vacuna(conn)
+        elif tecla == '9':
             borrar_estadisticas_vacuna(conn)
         else:
             print("\nComando desconocido.")
