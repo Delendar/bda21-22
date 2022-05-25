@@ -994,8 +994,8 @@ def menu(conn):
 6 - Ver recomendaciones     7 - Listar estadísticas
 8 - Registrar estadística de vacuna         9 - Registrar recomendación sobre vacuna
 a - Borrar una recomendación de una vacuna  b - Modificar una recomendación
-c - Aumentar el precio de una vacuna en valor de porcentaje
-q - Saír   
+c - Modificar estadística de vacuna
+q - Salir   
 """
     while True:
         print(MENU_TEXT)

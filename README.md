@@ -129,6 +129,10 @@ aclarar si se guarda en base 100 o en base 1)_
 En cuanto a la abstracción de las recomendaciones y sus relaciones con una vacuna nos permite controlarlas mediante la
 mera existencia de su asignación en la entidad <span style="font-family:monospace;">Recomendaciones_vacuna</span>.
 
+> Dado que la base de datos es pequeña y es fundamental el correcto acceso a datos correcta y completamente modificados
+> haremos uso de un nivel de aislamiento alto, serializable.
+> ¿Por poner algo?
+
 <a name="todo"></a>
 # TO:DO 
 
