@@ -18,21 +18,24 @@ import sys
 import datetime
 from datetime import datetime
 
-DBHOST = "localhost"
-DBUSER = "testuser"
-DBUSERPASS = "testpass"
-DBNAME = "testdb"
-DBMAXDIGITCOUNT = 12
-DBMAXFLOATDIGITCOUNT = 2
+DB_HOST = "localhost"
+DB_USER = "testuser"
+DB_USER_PASS = "testpass"
+DB_NAME = "testdb"
+DB_MAX_DIGIT_COUNT = 12
+DB_MAX_FLOAT_DIGIT_COUNT = 2
+DB_MAX_PK_LENGTH = 4
+DB_MAX_SHORT_STR_LENGTH = 20
+DB_MAX_LONG_STR_LENGTH = 50
 
 
 # Database --------------------------------------------------------------------
 def connect_db():
     try:
-        conn = psycopg2.connect(host=DBHOST,
-                                user=DBUSER,
-                                password=DBUSERPASS,
-                                dbname=DBNAME)
+        conn = psycopg2.connect(host=DB_HOST,
+                                user=DB_USER,
+                                password=DB_USER_PASS,
+                                dbname=DB_NAME)
         conn.autocommit = False
         return conn
     except psycopg2.OperationalError as e:
@@ -272,6 +275,12 @@ def agregar_vacuna(conn):
                     print("\nERROR: El código de vacuna es obligatorio.")
                 else:
                     print("\nERROR: El nombre de la vacuna es obligatorio.")
+            elif e.pgcode == psycopg2.errorcodes.NUMERIC_VALUE_OUT_OF_RANGE:
+                print("\nERROR: Desbordamiento en el atributo código de vacuna."
+                      f"\nEl sistema solo admite códigos de {DB_MAX_PK_LENGTH} dígitos.")
+            elif e.pgcode == psycopg2.errorcodes.STRING_DATA_RIGHT_TRUNCATION:
+                print("\nERROR: Nombre demasiado largo."
+                      f"\nEl límite de caracteres para el nombre de una vacuna son {DB_MAX_SHORT_STR_LENGTH}")
             elif e.pgcode == psycopg2.errorcodes.INVALID_TEXT_REPRESENTATION:
                 print("\nERROR: Representación no válida."
                       "\nEl código de vacuna debe de ser un número.")
@@ -317,6 +326,12 @@ def agregar_estadistica(conn):
                     print("\nERROR: El código de estadística es obligatorio.")
                 else:
                     print("\nERROR: El nombre de estadística es obligatorio.")
+            elif e.pgcode == psycopg2.errorcodes.NUMERIC_VALUE_OUT_OF_RANGE:
+                print("\nERROR: Desbordamiento en el atributo código de estadística."
+                      f"\nEl sistema solo admite códigos de {DB_MAX_PK_LENGTH} dígitos.")
+            elif e.pgcode == psycopg2.errorcodes.STRING_DATA_RIGHT_TRUNCATION:
+                print("\nERROR: Nombre demasiado largo."
+                      f"\nEl límite de caracteres para el nombre de una estadística son {DB_MAX_SHORT_STR_LENGTH}")
             elif e.pgcode == psycopg2.errorcodes.INVALID_TEXT_REPRESENTATION:
                 print("\nERROR: Representación no válida."
                       "\nEl código de estadística debe de ser un número.")
@@ -386,6 +401,16 @@ def agregar_recomendacion(conn):
                 if "cod_recomendacion" in e.pgerror:
                     print(f"\nERROR: Violación de unicidad."
                           f"\nYa existe una recomendación con el código ({r_cod})")
+            elif e.pgcode == psycopg2.errorcodes.NUMERIC_VALUE_OUT_OF_RANGE:
+                print("\nERROR: Desbordamiento en el atributo código de recomendación."
+                      f"\nEl sistema solo admite códigos de {DB_MAX_PK_LENGTH} dígitos.")
+            elif e.pgcode == psycopg2.errorcodes.STRING_DATA_RIGHT_TRUNCATION:
+                print("\nERROR: Cadena de caracteres demasiado larga.")
+                if "varying(20)" in e.pgerror:
+                    print(f"El límite de caracteres para el nombre de una organización son {DB_MAX_SHORT_STR_LENGTH}")
+                elif "varying(50)" in e.pgerror:
+                    print(f"El límite de caracteres para la descripción de una recomendación son "
+                          f"{DB_MAX_LONG_STR_LENGTH}")
             elif e.pgcode == psycopg2.errorcodes.INVALID_TEXT_REPRESENTATION:
                 print("\nERROR: Representación no válida."
                       "\nEl código de recomendación debe de ser un número.")
@@ -455,6 +480,12 @@ def registrar_recomendacion_vacuna(conn):
                     print(f"\nEl código de la recomendación ({r_cod}) no está registrado.")
                 else:
                     print(f"\nEl código de la vacuna ({v_cod}) no está registrado.")
+            elif e.pgcode == psycopg2.errorcodes.NUMERIC_VALUE_OUT_OF_RANGE:
+                if "cod_recomendacion" in e.pgerror:
+                    print("\nERROR: Desbordamiento en el atributo código de recomendación.")
+                elif "cod_vacuna" in e.pgerror:
+                    print("\nERROR: Desbordamiento en el atributo código de vacuna.")
+                print(f"\nEl sistema solo admite códigos de {DB_MAX_PK_LENGTH} dígitos.")
             elif e.pgcode == psycopg2.errorcodes.INVALID_TEXT_REPRESENTATION:
                 print("\nERROR: Representación no válida de identificador."
                       "\nLos códigos deben de ser un número.")
@@ -514,6 +545,19 @@ def conectar_vacuna_recomendacion(conn, vac, rec_inputs):
             elif e.pgcode == psycopg2.errorcodes.UNIQUE_VIOLATION:
                 print(f"\nERROR: Violación de restricción de unicidad.")
                 print(f"Ya existe una recomendación con el código ({r_cod})")
+            elif e.pgcode == psycopg2.errorcodes.NUMERIC_VALUE_OUT_OF_RANGE:
+                if "cod_recomendacion" in e.pgerror:
+                    print("\nERROR: Desbordamiento en el atributo código de recomendación.")
+                elif "cod_vacuna" in e.pgerror:
+                    print("\nERROR: Desbordamiento en el atributo código de vacuna.")
+                print(f"\nEl sistema solo admite códigos de {DB_MAX_PK_LENGTH} dígitos.")
+            elif e.pgcode == psycopg2.errorcodes.STRING_DATA_RIGHT_TRUNCATION:
+                print("\nERROR: Nombre demasiado largo.")
+                if "varying(20)" in e.pgerror:
+                    print(f"\nEl límite de caracteres para el nombre de una organización son {DB_MAX_SHORT_STR_LENGTH}")
+                elif "varying(50)" in e.pgerror:
+                    print(f"\nEl límite de caracteres para la descripción de una recomendación son "
+                          f"{DB_MAX_LONG_STR_LENGTH}")
             elif e.pgcode == psycopg2.errorcodes.INVALID_TEXT_REPRESENTATION:
                 print("\nERROR: Representación no válida."
                       "\nLos códigos deben de ser un número.")
@@ -591,10 +635,22 @@ def registrar_estadistica_vacuna_control_errores(e, v_cod, e_cod):
         if 'cod_estadistica' in e.diag.message_detail:
             print(f"\nLa estadística con clave cod_estadistica ({e_cod}) no está presente en la tabla ESTADISTICA.")
     elif e.pgcode == psycopg2.errorcodes.NUMERIC_VALUE_OUT_OF_RANGE:
-        print("\nERROR: Desbordamiento en el atributo valor."
-              f"\nEl sistema solo admite números de {DBMAXDIGITCOUNT} en la parte entera "
-              f"y {DBMAXFLOATDIGITCOUNT} decimales."
-              f"\nEn caso de tener más de {DBMAXFLOATDIGITCOUNT} en la parte decimal, se truncará el número.")
+        if "cod_estadistica" in e.pgerror:
+            print("\nERROR: Desbordamiento en código de estadística."
+                  f"\nEl sistema solo admite identificadores de {DB_MAX_PK_LENGTH} dígitos.")
+        elif "cod_vacuna" in e.pgerror:
+            print("\nERROR: Desbordamiento en código de vacuna."
+                  f"\nEl sistema solo admite identificadores de {DB_MAX_PK_LENGTH} dígitos.")
+        else:
+            print("\nERROR: Desbordamiento en el atributo valor."
+                  f"\nEl sistema solo admite números de {DB_MAX_DIGIT_COUNT} en la parte entera "
+                  f"y {DB_MAX_FLOAT_DIGIT_COUNT} decimales."
+                  f"\nEn caso de tener más de {DB_MAX_FLOAT_DIGIT_COUNT} en la parte decimal, se truncará el número.")
+    elif e.pgcode == psycopg2.errorcodes.STRING_DATA_RIGHT_TRUNCATION:
+        print("\nERROR: Cadena de caracteres demasiado larga.")
+        if "varying(50)" in e.pgerror:
+            print(f"El límite de caracteres para la descripción de una estadística son "
+                  f"{DB_MAX_LONG_STR_LENGTH}")
     elif e.pgcode == psycopg2.errorcodes.INVALID_TEXT_REPRESENTATION:
         print("\nERROR: Representación no válida."
               "\nLos códigos identificadores y/o el valor de estadística deben de ser números.")
@@ -1151,6 +1207,18 @@ def modificar_recomendacion(conn):
                     print("\nLa fecha de la recomendación es obligatoria.")
                 else:
                     print("\nEl código de vacuna para la recomendación es obligatorio.")
+            elif e.pgcode == psycopg2.errorcodes.NUMERIC_VALUE_OUT_OF_RANGE:
+                print("\nERROR: Desbordamiento en el atributo código de recomendación."
+                      f"\nEl sistema solo admite códigos de {DB_MAX_PK_LENGTH} dígitos.")
+            elif e.pgcode == psycopg2.errorcodes.STRING_DATA_RIGHT_TRUNCATION:
+                print("\nERROR: Cadena de caracteres demasiado larga.")
+                if "varying(20)" in e.pgerror:
+                    print(f"El límite de caracteres para el nombre de una organización son {DB_MAX_SHORT_STR_LENGTH}")
+                elif "varying(50)" in e.pgerror:
+                    print(f"El límite de caracteres para la descripción de una recomendación son "
+                          f"{DB_MAX_LONG_STR_LENGTH}")
+            else:
+                print(f"\nFALLO: Error genérico {e.pgcode}: {e.pgerror}")
             conn.rollback()
 
 
@@ -1228,9 +1296,9 @@ def aumento_vacuna(conn):
                     print("\nEl valor del incremento es obligatorio")
             elif e.pgcode == psycopg2.errorcodes.NUMERIC_VALUE_OUT_OF_RANGE:
                 print("\nERROR: Desbordamiento en el atributo valor (objetivo de incremento)."
-                      f"\nEl sistema solo admite números de {DBMAXDIGITCOUNT} en la parte entera "
-                      f"y {DBMAXFLOATDIGITCOUNT} decimales."
-                      f"\nEn caso de tener más de {DBMAXFLOATDIGITCOUNT} en la parte decimal, se truncará el número.")
+                      f"\nEl sistema solo admite números de {DB_MAX_DIGIT_COUNT} en la parte entera "
+                      f"y {DB_MAX_FLOAT_DIGIT_COUNT} decimales."
+                      f"\nEn caso de tener más de {DB_MAX_FLOAT_DIGIT_COUNT} en la parte decimal, se truncará el número.")
             elif e.pgcode == psycopg2.errorcodes.INVALID_TEXT_REPRESENTATION:
                 print("\nERROR: Representación no válida."
                       "\nLos códigos identificadores deben de ser números.")
