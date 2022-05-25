@@ -37,6 +37,7 @@ create table recomendacion_vacuna(
 	constraint fk_rec_vac_recomendacion foreign key (cod_recomendacion) references recomendacion,
 	constraint fk_rec_vac_vacuna foreign key (cod_vacuna) references vacuna);
 
+/*
 insert into vacuna (cod_vacuna, nombre_vacuna) values(1001,'PFZIER');
 insert into vacuna (cod_vacuna, nombre_vacuna) values(1002,'ASTRAZENECA');
 insert into vacuna (cod_vacuna, nombre_vacuna) values(1003,'JANHSEN');
@@ -65,3 +66,4 @@ insert into estadistica_vacuna (cod_vacuna, cod_estadistica, valor, descripcion)
     values (1002, 1, 3, null);
 insert into estadistica_vacuna (cod_vacuna, cod_estadistica, valor, descripcion)
     values (1002, 2, 9, null);
+*/
