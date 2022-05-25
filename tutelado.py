@@ -270,6 +270,9 @@ def agregar_vacuna(conn):
     conn:
         La conexión a la base de datos.
     """
+    
+    conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE
+    
     inputs = form_generico('vacuna')
     v_cod = inputs['cod']
     v_nom = inputs['nom']
@@ -281,7 +284,17 @@ def agregar_vacuna(conn):
             print("Vacuna añadida")
             menu_vacuna(conn, v_cod)
         except psycopg2.Error as e:
-            error_control_generico('vacuna', v_cod, v_nom, e)
+            if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
+                print("ERRO: a táboa non existe")
+            elif e.pgcode == psycopg2.errorcodes.UNIQUE_VIOLATION:
+                print("Erro: Xa existe unha vacuna con ese código")
+            elif e.pgcode == psycopg2.errorcodes.NOT_NULL_VIOLATION:
+                if "cod_vacuna" in e.pgerror:
+                    print("ERRO: O código de vacuna é obrigatorio")
+                else:
+                    print("ERRO: O nome da vacuna é obrigatorio")
+            else:
+                print(f"Erro xenérico {e.pgcode}: {e.pgerror}")
             conn.rollback()
 
 
@@ -295,6 +308,9 @@ def agregar_estadistica(conn):
     conn:
         La conexión a la base de datos.
     """
+    
+    conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE
+    
     inputs = form_generico('estadistica')
     e_cod = inputs['cod']
     e_nom = inputs['nom']
@@ -305,7 +321,17 @@ def agregar_estadistica(conn):
             conn.commit()
             print("Estadistica registrada")
         except psycopg2.Error as e:
-            error_control_generico('estadistica', e_cod, e_nom, e)
+            if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
+                print("ERRO: a táboa non existe")
+            elif e.pgcode == psycopg2.errorcodes.UNIQUE_VIOLATION:
+                print("Erro: Xa existe unha estadística con ese código")
+            elif e.pgcode == psycopg2.errorcodes.NOT_NULL_VIOLATION:
+                if "cod_estadistica" in e.pgerror:
+                    print("ERRO: O código de estadística é obrigatorio")
+                else:
+                    print("ERRO: O nome da estadística é obrigatorio")
+            else:
+                print(f"Erro xenérico {e.pgcode}: {e.pgerror}")
             conn.rollback()
 
 
@@ -342,6 +368,9 @@ def agregar_recomendacion(conn):
     conn:
         La conexión con la base de datos.
     """
+    
+    conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE
+    
     inputs = form_agregar_recomendacion()
     r_cod = inputs['cod']
     r_nom = inputs['nom']
@@ -404,6 +433,9 @@ def registrar_recomendacion_vacuna(conn):
     conn:
         La conexión con la base de datos.
     """
+    
+    conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED
+    
     inputs = form_registrar_recomendacion_vacuna()
     r_cod = inputs['rec']
     v_cod = inputs['vac']
@@ -420,24 +452,18 @@ def registrar_recomendacion_vacuna(conn):
             elif e.pgcode == psycopg2.errorcodes.NOT_NULL_VIOLATION:
                 if "cod_vacuna" in e.pgerror:
                     print("El código de recomendación es obligatorio.")
-                elif "organizacion" in e.pgerror:
+                elif "fecha" in e.pgerror:
                     print("La fecha de la recomendación es obligatoria.")
                 else:
                     print("El código de vacuna para la recomendación es obligatorio.")
+            elif e.pgcode == psycopg2.errorcodes.FOREIGN_KEY_VIOLATION:
+                if "cod_recomendacion" in e.pgerror:
+                    print("El código de la recomendación no está registrado")
+                else:
+                    print("El código de la vacuna no está registrado")
             else:
                 print(f"Error genérico: {e.pgcode} : {e.pgerror}")
             conn.rollback()
-
-
-# ------------------------------------------------------------
-"""    
-    -with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-        cur.execute(f"select * from artigo where codart={cod}")
-        row = cur.fetchone()
-        while row:
-            print(f"Fila número {cur.rownumber} de {cur.rowcount}: {row}")
-            row = cur.fetchone()
-    """
 
 
 def buscar_estadisticas_vacuna(conn, control_tx=True):
@@ -454,6 +480,10 @@ def buscar_estadisticas_vacuna(conn, control_tx=True):
         Si TRUE entonces se realiza control transaccional,
         Si FALSE no se realiza.
     """
+    
+    if control_tx:
+        conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED
+        
     cod_search = False
     scod = input("Codigo o nombre de vacuna: ")
     if scod == "":
@@ -519,6 +549,10 @@ def buscar_recomendaciones_vacuna(conn, control_tx=True):
         Si TRUE entonces se realiza control transaccional,
         Si FALSE no se realiza.
     """
+    
+    if control_tx:
+        conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED
+    
     cod_search = False
     scod = input("Codigo o nombre de vacuna: ")
     if scod == "":
@@ -570,7 +604,7 @@ def buscar_recomendaciones_vacuna(conn, control_tx=True):
     return retval
 
 
-def listar_estadisticas(conn):
+def listar_estadisticas(conn, control_tx=True):
     """
     Realiza una búsqueda en la base de datos sobre la tabla ESTADISTICAS y lista todas las filas encontradas.
 
@@ -578,7 +612,14 @@ def listar_estadisticas(conn):
     ----------
     conn:
         La conexión con la base de datos.
+    control_tx:
+        Variable de control transaccional, predeterminado TRUE.
+        Si TRUE entonces se realiza control transaccional,
+        Si FALSE no se realiza.
     """
+    if control_tx:
+        conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED
+    
     sql = "select * from estadistica"
 
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
@@ -676,6 +717,9 @@ def registrar_estadistica_vacuna(conn):
     conn:
         La conexión con la base de datos.
     """
+    
+    conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITED
+    
     inputs = form_registrar_estadistica_vacuna()
     v_criteria = inputs['v_criteria']
     e_criteria = inputs['e_criteria']
@@ -711,7 +755,7 @@ def registrar_estadistica_vacuna(conn):
             conn.rollback()
 
 
-def listar_recomendaciones(conn):
+def listar_recomendaciones(conn, control_tx=True):
     """
     Realiza una búsqueda en la base de datos sobre la tabla RECOMENDACIONES y lista todas las filas encontradas.
 
@@ -719,7 +763,15 @@ def listar_recomendaciones(conn):
     ----------
     conn:
         La conexión con la base de datos.
+    control_tx:
+        Variable de control transaccional, predeterminado TRUE.
+        Si TRUE entonces se realiza control transaccional,
+        Si FALSE no se realiza.
     """
+    
+    if control_tx:
+        conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITED
+    
     sql = "select * from recomendacion"
 
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
@@ -736,7 +788,7 @@ def listar_recomendaciones(conn):
             print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
 
 
-def buscar_recomendaciones(conn):
+def buscar_recomendaciones(conn, control_tx=True):
     """
     Realiza una búsqueda en la base de datos sobre la tabla RECOMENDACIONES en base a un código de recomendación
     o nombre de organización otorgado por el usuario.
@@ -745,7 +797,15 @@ def buscar_recomendaciones(conn):
     ----------
     conn:
         La conexión con la base de datos.
+    control_tx:
+        Variable de control transaccional, predeterminado TRUE.
+        Si TRUE entonces se realiza control transaccional,
+        Si FALSE no se realiza.
     """
+    
+    if control_tx:
+        conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITED
+    
     cod_search = False
     scod = input("Criterio de búsqueda (código para búsqueda específica, nombre para organización): \n>")
     if scod == "":
@@ -811,6 +871,18 @@ def form_borrar_recomendaciones():
 
 
 def borrar_recomendaciones_vacuna(conn):
+    """
+    Borra de la base de datos una fila de la tabla RECOMENDACION_VACUNA según los códigos que
+    le indique el usuario
+
+    Parameters
+    ----------
+    conn:
+        La conexión con la base de datos.
+    """
+        
+    conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE
+        
     inputs = form_borrar_recomendaciones()
     r_cod = inputs['cod_r']
     v_cod = inputs['cod_v']
@@ -853,6 +925,18 @@ def form_modificar_recomendacion():
     return {'cod': cod_r, 'nom': org, 'desc': desc}
     
 def modificar_recomendacion(conn):
+    """
+    Hace un update de los campos nombre y descripción de la fila que tenga el código 
+    indicado por el usuario en la entidad RECOMENDACION
+
+    Parameters
+    ----------
+    conn:
+        La conexión con la base de datos.
+    """
+    
+    conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE
+    
     inputs= form_modificar_recomendacion()
     cod= inputs['cod']
     org= inputs['nom']
@@ -867,9 +951,21 @@ def modificar_recomendacion(conn):
             print(f"Recomendación de modificada.")
         except psycopg2.Error as e:
             if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
-                print("ERRO: a táboa non existe")
+                print("La tabla no existe.")
+            elif e.pgcode == psycopg2.errorcodes.NOT_NULL_VIOLATION:
+                if "cod_vacuna" in e.pgerror:
+                    print("El código de recomendación es obligatorio.")
+                elif "fecha" in e.pgerror:
+                    print("La fecha de la recomendación es obligatoria.")
+                else:
+                    print("El código de vacuna para la recomendación es obligatorio.")
+            elif e.pgcode == psycopg2.errorcodes.FOREIGN_KEY_VIOLATION:
+                if "cod_recomendacion" in e.pgerror:
+                    print("El código de la recomendación no está registrado")
+                else:
+                    print("El código de la vacuna no está registrado")
             else:
-                print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
+                print(f"Error genérico: {e.pgcode} : {e.pgerror}")
             conn.rollback()
             
 def menu_vacuna(conn,vac):
@@ -888,6 +984,17 @@ def menu_vacuna(conn,vac):
             conectar_vacuna_recomendacion(conn, vac, rec)
 
 def conectar_vacuna_recomendacion(conn,vac,rec):
+    """
+    Crea una fila nueva en la entidad RECOMENDACION_VACUNA que asigne la recomendación y la
+    vacuna creadas anteriormente a fecha de hoy.
+
+    Parameters
+    ----------
+    conn:
+        La conexión con la base de datos.
+    """
+    
+    conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE
     
     with conn.cursor() as cur:
         try:
@@ -899,11 +1006,16 @@ def conectar_vacuna_recomendacion(conn,vac,rec):
                 print("La tabla no existe.")
             elif e.pgcode == psycopg2.errorcodes.NOT_NULL_VIOLATION:
                 if "cod_vacuna" in e.pgerror:
-                    print("El código de recomendación es obligatorio.")
+                    print("El código de la vacuna es obligatorio.")
                 elif "cod_recomendacion" in e.pgerror:
                     print("La fecha de la recomendación es obligatoria.")
                 else:
                     print("El código de vacuna para la recomendación es obligatorio.")
+            elif e.pgcode == psycopg2.errorcodes.FOREIGN_KEY_VIOLATION:
+                if "cod_vacuna" in e.pgerror:
+                    print("El código de vacuna es obligatorio.")
+                else:
+                    print("La fecha de la recomendación es obligatoria.")
             else:
                 print(f"Error genérico: {e.pgcode} : {e.pgerror}")
             conn.rollback()
@@ -933,6 +1045,18 @@ def form_aumento_vacuna():
 
     
 def aumento_vacuna(conn):
+    """
+    Modifica el valor de una vacuna. Si el usuario indica % en el incremento se calculará el tanto
+    por ciento, si no se sumará el valor indicado.
+
+    Parameters
+    ----------
+    conn:
+        La conexión a la base de datos.
+    """
+    
+    conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE
+    
     inputs= form_aumento_vacuna()
     cod= inputs['cod']
     sta= inputs['sta']
@@ -956,10 +1080,17 @@ def aumento_vacuna(conn):
             print(f"Valor modificado.")
         except psycopg2.Error as e:
             if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
-                print("ERRO: a táboa non existe")
+                print("La tabla no existe.")
+            elif e.pgcode == psycopg2.errorcodes.NOT_NULL_VIOLATION:
+                if "cod_vacuna" in e.pgerror:
+                    print("El código de la vacuna es obligatorio.")
+                elif "cod_estadistica" in e.pgerror:
+                    print("El código de la estadística es obligatorio.")
+                else:
+                    print("El valor del incremento es obligatorio")
             else:
-                print(f"Erro xenérico: {e.pgcode} : {e.pgerror}")
-            conn.rollback()   
+                print(f"Error genérico: {e.pgcode} : {e.pgerror}")
+            conn.rollback() 
     
 
 
@@ -976,9 +1107,9 @@ def menu_recomendaciones(conn):
         if tecla == 'q':
             break
         elif tecla == '1':
-            listar_recomendaciones(conn)
+            listar_recomendaciones(conn, False)
         elif tecla == '2':
-            buscar_recomendaciones(conn)
+            buscar_recomendaciones(conn, False)
 
 
 # ------------------------------------------------------------
@@ -1015,7 +1146,7 @@ q - Salir
         elif tecla == '6':
             menu_recomendaciones(conn)
         elif tecla == '7':
-            listar_estadisticas(conn)
+            listar_estadisticas(conn, False)
         elif tecla == '8':
             registrar_estadistica_vacuna(conn)
         elif tecla == '9':
