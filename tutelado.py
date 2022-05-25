@@ -22,7 +22,8 @@ DBHOST = "localhost"
 DBUSER = "testuser"
 DBUSERPASS = "testpass"
 DBNAME = "testdb"
-
+DBMAXDIGITCOUNT = 12
+DBMAXFLOATDIGITCOUNT = 2
 
 def connect_db():
     try:
@@ -731,6 +732,11 @@ def registrar_estadistica_vacuna_control_errores(e, v_cod, e_cod):
             print(f"\nLa vacuna con clave cod_vacuna ({v_cod}) no está presente en la tabla VACUNA.")
         if 'cod_estadistica' in e.diag.message_detail:
             print(f"\nLa estadística con clave cod_estadistica ({e_cod}) no está presente en la tabla ESTADISTICA.")
+    elif e.pgcode == psycopg2.errorcodes.NUMERIC_VALUE_OUT_OF_RANGE:
+        print("\nERROR: Desbordamiento en el atributo valor."
+               f"\nEl sistema solo admite números de {DBMAXDIGITCOUNT} en la parte entera "
+               f"y {DBMAXFLOATDIGITCOUNT} decimales."
+               f"\nEn caso de tener más de {DBMAXFLOATDIGITCOUNT} en la parte decimal, se truncará el número.")
     else:
         print(f"\nFALLO: Error genérico: {e.pgcode} : {e.pgerror}")
 
@@ -882,7 +888,60 @@ def buscar_recomendaciones(conn, control_tx=True):
             conn.rollback()
 
 
-def form_borrar():
+def form_borrar_estadistica_vacuna():
+    """
+    Obtiene del usuario la información necesaria para poder borrar una fila en la entidad
+    ESTADISTICAS_VACUNA.
+
+    Returns
+    -------
+    data:
+        Diccionario de datos con los siguientes elementos:
+        código de la estadística con clave 'cod_e',
+        código de la vacuna con clave 'cod_v'
+    """
+    scode = input("Código de estadística: ")
+    cod_e = None if scode == "" else int(scode)
+
+    scodv = input("Código de vacuna: ")
+    cod_v = None if scodv == "" else scodv.upper()
+
+    return {'cod_e': cod_e, 'cod_v': cod_v}
+
+def borrar_estadisticas_vacuna(conn):
+    """
+    Borra de la base de datos una fila de la tabla ESTADISTIA_VACUNA según los códigos que
+    le indique el usuario.
+
+    Parameters
+    ----------
+    conn:
+        La conexión con la base de datos.
+    """
+        
+    conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE
+        
+    inputs = form_borrar_estadistica_vacuna()
+
+    with conn.cursor() as cur:
+        try:
+            sql = "delete from estadistica_vacuna where cod_vacuna= (%(cod_v)s) and cod_estadistica= (%(cod_e)s)"
+
+            cur.execute(sql, inputs)
+            conn.commit()
+            if cur.rowcount == 0:
+                print("No se ha encontrado la estadística asociada a la vacuna.")
+            else:
+                print(f"Estadística asociada de vacuna borrada.")
+        except psycopg2.Error as e:
+            if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
+                print("\nERROR: la tabla ESTADISTICA_VACUNA no existe.")
+            else:
+                print(f"\nERROR: Error genérico: {e.pgcode} : {e.pgerror}")
+            conn.rollback()
+
+
+def form_borrar_recomendacion_vacuna():
     """
     Obtiene del usuario la información necesaria para poder borrar una fila en la entidad
     RECOMENDACION_VACUNA.
@@ -903,39 +962,6 @@ def form_borrar():
     return {'cod_r': cod_r, 'cod_v': cod_v}
 
 
-def borrar_estadisticas_vacuna(conn):
-    """
-    Borra de la base de datos una fila de la tabla ESTADISTIA_VACUNA según los códigos que
-    le indique el usuario.
-
-    Parameters
-    ----------
-    conn:
-        La conexión con la base de datos.
-    """
-        
-    conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE
-        
-    inputs = form_borrar()
-
-    with conn.cursor() as cur:
-        try:
-            sql = "delete from estadistica_vacuna where cod_vacuna= (%(cod_v)s) and cod_estadistica= (%(cod_r)s)"
-
-            cur.execute(sql, inputs)
-            conn.commit()
-            if cur.rowcount == 0:
-                print("No se ha encontrado la estadística asociada a la vacuna.")
-            else:
-                print(f"Estadística asociada de vacuna borrada.")
-        except psycopg2.Error as e:
-            if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE:
-                print("\nERROR: la tabla ESTADISTICA_VACUNA no existe.")
-            else:
-                print(f"\nERROR: Error genérico: {e.pgcode} : {e.pgerror}")
-            conn.rollback()
-
-
 def borrar_recomendaciones_vacuna(conn):
     """
     Borra de la base de datos una fila de la tabla RECOMENDACION_VACUNA según los códigos que
@@ -949,7 +975,7 @@ def borrar_recomendaciones_vacuna(conn):
 
     conn.isolation_level = psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE
 
-    inputs = form_borrar()
+    inputs = form_borrar_recomendacion_vacuna()
 
     with conn.cursor() as cur:
         try:
@@ -1211,7 +1237,7 @@ q - Salir
             agregar_estadistica(conn)
         elif tecla.lower() == 're':
             registrar_estadistica_vacuna(conn)
-        elif tecla.lower() == 'rv':
+        elif tecla.lower() == 'rr':
             registrar_recomendacion_vacuna(conn)
         elif tecla == '1':
             menu_recomendaciones(conn)

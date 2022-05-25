@@ -198,33 +198,33 @@ funcionalidades.
   - [ ] <span style="font-family:monospace;color:yellow;">M</span> Inserción de vacuna y estadísticas.
 - [ ] Borrados:
   - [x] <span style="font-family:monospace;color:red;">A</span> Borrado de recomendaciones sobre vacunas.
-  - [ ] <span style="font-family:monospace;color:green;">B</span> Borrado de estadísticas sobre vacunas.
+  - [X] <span style="font-family:monospace;color:green;">B</span> Borrado de estadísticas sobre vacunas.
 
 <a name="gestion-de-errores"></a>
 ## Gestión de errores. 
 Errores a considerar:
 - Comunes:
-  - [ ] Nulidad de clave primaria.
-  - [ ] Duplicación de clave primaria.
+  - [X] Nulidad de clave primaria.
+  - [X] Duplicación de clave primaria.
 - Vacunas:
-  - [ ] Inexistencia de:
+  - [X] Inexistencia de:
     - <span style="font-family:monospace;">nombre_vacuna</span>
-  - [ ] Valores nulos en:
+  - [X] Valores nulos en:
     - <span style="font-family:monospace;">nombre_vacuna</span>
-  - [ ] Valores duplicados en:
+  - [X] Valores duplicados en:
     - <span style="font-family:monospace;">nombre_vacuna</span>
 - Recomendación:
-  - [ ] Inexistencia de:
+  - [X] Inexistencia de:
     - <span style="font-family:monospace;">organizacion</span>
-  - [ ] Valores nulos en:
+  - [X] Valores nulos en:
     - <span style="font-family:monospace;">organizacion</span>
     - <span style="font-family:monospace;">descripcion</span>
 - Estadística:
-  - [ ] Inexistencia de:
+  - [X] Inexistencia de:
     - <span style="font-family:monospace;">nombre_estadistica</span>
-  - [ ] Valores nulos en:
+  - [X] Valores nulos en:
     - <span style="font-family:monospace;">nombre_estadistica</span>
-  - [ ] Valores duplicados en:
+  - [X] Valores duplicados en:
     - <span style="font-family:monospace;">nombre_estadistica</span>
   - [ ] Números no admitidos:
     - [ ] Parte entera demasiado grande.
@@ -239,10 +239,10 @@ Errores a considerar:
     - <span style="font-family:monospace;">cod_vacuna</span>
     - <span style="font-family:monospace;">cod_estadistica</span>
 - Recomendación-vacuna:
-  - [ ] Inexistencia de:
+  - [X] Inexistencia de:
     - <span style="font-family:monospace;">nombre_vacuna</span>
-  - [ ] Valores nulos en:
+  - [X] Valores nulos en:
     - <span style="font-family:monospace;">fecha_aplicacion</span>
-  - [ ] Inexistencia de valores objetivo de claves referenciales en:
+  - [X] Inexistencia de valores objetivo de claves referenciales en:
     - <span style="font-family:monospace;">cod_vacuna</span>
     - <span style="font-family:monospace;">cod_recomendacion</span>
